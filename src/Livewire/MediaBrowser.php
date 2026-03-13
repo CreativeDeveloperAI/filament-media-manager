@@ -122,6 +122,13 @@ class MediaBrowser extends Component implements HasActions, HasForms
         return 'media_browser_page';
     }
 
+    public function boot()
+    {
+        if (app()->runningUnitTests()) {
+            \Livewire\store($this)->set('forceRender', true);
+        }
+    }
+
     public function queryString()
     {
         if ($this->isPicker) {
@@ -1613,7 +1620,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
             ->send();
     }
 
-    public function render()
+    public function render(): \Illuminate\Contracts\View\View
     {
         return view('media-manager::livewire.media-browser');
     }

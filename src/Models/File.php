@@ -2,7 +2,6 @@
 
 namespace Slimani\MediaManager\Models;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -69,7 +68,14 @@ class File extends Model implements HasMedia
 
     public function uploader(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'uploaded_by_user_id');
+        $userModel = config('auth.providers.users.model') ?? 'App\Models\User';
+        
+        if (! class_exists($userModel)) {
+            // Fallback for tests or environments where the model isn't available yet
+            return $this->belongsTo(\Illuminate\Foundation\Auth\User::class, 'uploaded_by_user_id');
+        }
+        
+        return $this->belongsTo($userModel, 'uploaded_by_user_id');
     }
 
     public function getUrl(string $conversion = ''): ?string

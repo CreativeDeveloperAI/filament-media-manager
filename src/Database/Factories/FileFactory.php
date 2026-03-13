@@ -2,7 +2,6 @@
 
 namespace Slimani\MediaManager\Database\Factories;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Slimani\MediaManager\Models\File;
 
@@ -13,7 +12,7 @@ class FileFactory extends Factory
     public function definition(): array
     {
         return [
-            'uploaded_by_user_id' => User::factory(),
+            'uploaded_by_user_id' => null,
             'name' => $this->faker->word(),
             'size' => $this->faker->randomNumber(5),
             'extension' => 'jpg',

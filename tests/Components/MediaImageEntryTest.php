@@ -1,5 +1,7 @@
 <?php
 
+namespace Slimani\MediaManager\Tests\Components;
+
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;

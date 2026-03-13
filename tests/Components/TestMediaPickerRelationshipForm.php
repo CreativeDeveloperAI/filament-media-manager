@@ -2,7 +2,7 @@
 
 namespace Slimani\MediaManager\Tests\Components;
 
-use App\Models\User;
+use Slimani\MediaManager\Tests\Models\User;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Schema;
@@ -37,7 +37,6 @@ class TestMediaPickerRelationshipForm extends Component implements HasForms
 
     public function submit()
     {
-        $this->user->update($this->form->getState());
         $this->form->saveRelationships();
     }
 

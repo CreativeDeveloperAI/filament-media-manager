@@ -2,62 +2,47 @@
 
 namespace Slimani\MediaManager\Tests;
 
-use App\Models\User;
+use Slimani\MediaManager\Tests\Models\User;
 use Livewire\Livewire;
 use Slimani\MediaManager\Models\File;
 use Slimani\MediaManager\Tests\Components\TestMediaPickerRelationshipForm;
 
-class MediaPickerRelationshipTest extends TestCase
-{
-    public function test_it_hydrates_id_from_integer_id()
-    {
-        $file = File::factory()->create();
+uses(TestCase::class);
 
-        $user = User::factory()->create(['avatar_id' => $file->id]);
+it('hydrates id from integer id', function () {
+    $file = File::create(['name' => 'Avatar']);
 
-        Livewire::actingAs($user)
-            ->test(TestMediaPickerRelationshipForm::class, ['user' => $user])
-            ->assertSet('data.avatar_id', fn ($state) => (int) $state === (int) $file->id);
-    }
+    $user = User::create(['name' => 'Test User', 'avatar_id' => $file->id]);
 
-    public function test_it_dehydrates_integer_id()
-    {
-        $file = File::factory()->create();
+    Livewire::actingAs($user)
+        ->test(TestMediaPickerRelationshipForm::class, ['user' => $user])
+        ->assertSet('data.avatar_id', fn ($state) => (int) $state === (int) $file->id);
+});
 
-        $user = User::factory()->create();
+it('dehydrates integer id', function () {
+    $file = File::create(['name' => 'Avatar']);
 
-        Livewire::actingAs($user)
-            ->test(TestMediaPickerRelationshipForm::class, ['user' => $user])
-            ->fillForm(['avatar_id' => $file->id])
-            ->call('submit');
+    $user = User::create(['name' => 'Test User']);
 
-        $this->assertEquals($file->id, $user->fresh()->avatar_id);
-    }
+    Livewire::actingAs($user)
+        ->test(TestMediaPickerRelationshipForm::class, ['user' => $user])
+        ->fillForm(['avatar_id' => $file->id])
+        ->call('submit');
 
-    public function test_it_handles_multiple_relationship_mapping()
-    {
-        $file1 = File::factory()->create();
-        $file2 = File::factory()->create();
+    expect($user->fresh()->avatar_id)->toBe($file->id);
+});
 
-        $user = User::factory()->create();
+it('handles multiple relationship mapping', function () {
+    $file1 = File::create(['name' => 'Doc 1']);
+    $file2 = File::create(['name' => 'Doc 2']);
 
-        Livewire::actingAs($user)
-            ->test(TestMediaPickerRelationshipForm::class, ['user' => $user])
-            ->fillForm(['documents' => [$file1->id, $file2->id]])
-            ->call('submit');
+    $user = User::create(['name' => 'Test User']);
 
-        $this->assertCount(2, $user->fresh()->documents);
-        $this->assertContains($file1->id, $user->fresh()->documents->pluck('id'));
-        $this->assertContains($file2->id, $user->fresh()->documents->pluck('id'));
-    }
+    Livewire::actingAs($user)
+        ->test(TestMediaPickerRelationshipForm::class, ['user' => $user])
+        ->fillForm(['documents' => [$file1->id, $file2->id]])
+        ->call('submit');
 
-    protected function getTestJpg()
-    {
-        $path = tempnam(sys_get_temp_dir(), 'test').'.jpg';
-        $image = imagecreatetruecolor(10, 10);
-        imagejpeg($image, $path);
-        imagedestroy($image);
-
-        return $path;
-    }
-}
+    expect($user->fresh()->documents)->toHaveCount(2);
+    expect($user->fresh()->documents->pluck('id'))->toContain($file1->id, $file2->id);
+});
