@@ -598,7 +598,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
             return;
         }
 
-        Log::info("Media Browser - Selecting File ID: {$id}");
         $this->selectedFileId = $id;
 
         if ($this->isPicker && ! $this->multiple) {
@@ -625,10 +624,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
         }
 
         if (collect($this->selectedItems)->contains($id)) {
-            Log::info("Media Browser - Deselecting Item: {$id}");
             $this->selectedItems = collect($this->selectedItems)->reject(fn ($item) => $item === $id)->toArray();
         } else {
-            Log::info("Media Browser - Selecting Item: {$id}");
             if ($this->isPicker && ! $this->multiple) {
                 $this->selectedItems = [$id];
             } else {
@@ -1157,14 +1154,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
                             $this->clearCachedSchemas();
                         })
                 ),
-
-            Action::make('locate')
-                ->label('Locate in Browser')
-                ->icon('heroicon-o-magnifying-glass-circle')
-                ->color('primary')
-                ->link()
-                ->size('sm')
-                ->action(fn () => $this->locateItem("folder-{$folder->id}")),
         ];
     }
 
@@ -1256,7 +1245,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
     public function setCurrentFolder(?int $id): void
     {
-        Log::info("Media Browser - Setting Current Folder to ID: {$id}");
         $this->currentFolderId = $id;
         $this->currentFolder = $id ? Folder::query()->with(['tags'])->withCount(['children', 'files'])->find($id) : null;
         $this->editingFolderId = null;

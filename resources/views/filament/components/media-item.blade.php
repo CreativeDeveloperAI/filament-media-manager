@@ -11,12 +11,11 @@
 <div 
     {{ $attributes->class([
         'fi-media-item group',
+        'fi-is-selected' => $isSelected,
         'fi-is-disabled' => !($isAccepted ?? true),
     ]) }}
-    :class="{ 'fi-is-selected': isSelected }"
     x-data="{ 
         longPressTimeout: null, 
-        isSelected: @js($isSelected),
         isLongPress: false, 
         isDragging: false, 
         startPress(e) { 
@@ -25,7 +24,6 @@
             this.isLongPress = false; 
             this.longPressTimeout = setTimeout(() => { 
                 this.isLongPress = true; 
-                this.isSelected = !this.isSelected;
                 $wire.toggleSelection('{{ $isFolder ? "folder-" : "file-" }}{{ $item->id }}'); 
                 if ('vibrate' in navigator) navigator.vibrate(50); 
             }, 500); 
@@ -36,13 +34,10 @@
         handleSingleClick() {
             if (this.isLongPress) return;
             
-            console.log('Media Item Single Click - Type: {{ $isFolder ? "Folder" : "File" }}, ID: {{ $item->id }}');
             @if($isFolder)
                 $wire.setCurrentFolder({{ $item->id }})
             @else
                 if (!{{ $isAccepted ? 'true' : 'false' }}) return;
-                
-                this.isSelected = !this.isSelected;
                 
                 $wire.selectFile({{ $item->id }});
                 if (!$wire.isPicker) {
@@ -93,13 +88,12 @@
 
         <!-- Selection Badge -->
         <div 
-            :class="isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-0 group-hover:opacity-100'"
-            class="fi-media-item-selection-badge group-selection"
+            class="fi-media-item-selection-badge group-selection {{ $isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-0 group-hover:opacity-100 group-hover:scale-100' }}"
         >
             <button 
                 type="button"
                 @if(!$isAccepted) disabled @endif
-                x-on:click.stop="isSelected = !isSelected; $wire.toggleSelection('{{ $isFolder ? "folder-" : "file-" }}{{ $item->id }}')"
+                x-on:click.stop="$wire.toggleSelection('{{ $isFolder ? "folder-" : "file-" }}{{ $item->id }}')"
                 class="fi-media-item-selection-button"
             >
                 <x-heroicon-m-check class="w-4 h-4" />
