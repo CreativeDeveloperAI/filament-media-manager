@@ -2,6 +2,21 @@
 
 All notable changes to `filament-media-manager` will be documented in this file.
 
+## v0.2.3 - 2026-03-13
+
+### Changed
+- Finalized documentation and credits.
+
+## v0.2.2 - 2026-03-13
+
+### Changed
+- Updated documentation with appropriate credits for `SelectTree` and `MediaAction`.
+
+## v0.2.1 - 2026-03-13
+
+### Changed
+- Updated plugin features in README.
+
 ## v0.2.0 - 2026-03-13
 
 ### Added
