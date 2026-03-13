@@ -2,6 +2,7 @@
 
 namespace Slimani\MediaManager\Livewire;
 
+use CodeWithDennis\FilamentSelectTree\SelectTree;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -1311,17 +1312,15 @@ class MediaBrowser extends Component implements HasActions, HasForms
             ->icon(Heroicon::FolderArrowDown)
             ->color('gray')
             ->schema([
-                Select::make('folder_id')
+                SelectTree::make('folder_id')
                     ->label('Target Folder')
-                    ->options(function () {
-                        $folders = Folder::all();
-                        $options = [0 => 'Root'];
-                        foreach ($folders as $folder) {
-                            $options[$folder->id] = $this->getFolderTreePath($folder);
-                        }
-
-                        return $options;
-                    })
+                    ->query(Folder::query()->orderBy('name'), 'name', 'parent_id')
+                    ->prepend([
+                        'name' => 'Root',
+                        'value' => 0,
+                    ])
+                    ->enableBranchNode()
+                    ->withCount()
                     ->required()
                     ->searchable(),
             ])
