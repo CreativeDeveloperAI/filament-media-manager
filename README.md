@@ -8,6 +8,15 @@
 
 A comprehensive media manager plugin for Filament v5.
 
+## Features
+
+- **Hierarchical Folder Navigation**: Browse and organize media using a powerful tree selection interface, thanks to `filament-select-tree`.
+- **Folder-based organization**: Organize your media into hierarchical folders.
+- **Taggable media**: Add tags to your files for easier searching and filtering.
+- **Support for multiple disks**: Configure which disk to use for storage per field or globally.
+- **Native Filament integration**: Built specifically for Filament v5 with support for forms, tables, and actions.
+- **Smooth UI**: Modern, responsive media browser with search and filtering capabilities.
+
 ## Installation
 
 You can install the package via composer:
@@ -71,15 +80,6 @@ MediaColumn::make('avatar')
     ->circular()
     ->stacked()
 ```
-
-## Features
-
-- **Hierarchical Folder Navigation**: Browse and organize media using a powerful tree selection interface, thanks to `filament-select-tree`.
-- **Folder-based organization**: Organize your media into hierarchical folders.
-- **Taggable media**: Add tags to your files for easier searching and filtering.
-- **Support for multiple disks**: Configure which disk to use for storage per field or globally.
-- **Native Filament integration**: Built specifically for Filament v5 with support for forms, tables, and actions.
-- **Smooth UI**: Modern, responsive media browser with search and filtering capabilities.
 
 ## Testing
 
