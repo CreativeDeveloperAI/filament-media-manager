@@ -74,6 +74,7 @@ MediaColumn::make('avatar')
 
 ## Features
 
+- **Hierarchical Folder Navigation**: Browse and organize media using a powerful tree selection interface, thanks to `filament-select-tree`.
 - **Folder-based organization**: Organize your media into hierarchical folders.
 - **Taggable media**: Add tags to your files for easier searching and filtering.
 - **Support for multiple disks**: Configure which disk to use for storage per field or globally.
