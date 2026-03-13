@@ -19,6 +19,7 @@ use Laravel\SerializableClosure\SerializableClosure;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Slimani\MediaManager\Livewire\MediaBrowser;
 use Slimani\MediaManager\Models\File;
+use Slimani\MediaManager\Models\Folder;
 
 class MediaPicker extends FileUpload
 {
@@ -201,7 +202,7 @@ class MediaPicker extends FileUpload
                 $parentId = null;
 
                 foreach ($segments as $segment) {
-                    $folder = \Slimani\MediaManager\Models\Folder::firstOrCreate([
+                    $folder = Folder::firstOrCreate([
                         'name' => $segment,
                         'parent_id' => $parentId,
                     ]);
