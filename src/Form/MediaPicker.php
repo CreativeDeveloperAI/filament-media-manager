@@ -1,0 +1,300 @@
+<?php
+
+namespace Slimani\MediaManager\Form;
+
+use Filament\Actions\Action;
+use Filament\Support\Icons\Heroicon;
+use Slimani\MediaManager\Models\File;
+
+class MediaPicker extends \Filament\Forms\Components\FileUpload
+{
+    protected string $pickerId;
+
+    protected string|\Closure|null $collection = null;
+
+    protected string|\Closure|null $relationship = null;
+
+    public function getPickerId(): string
+    {
+        return $this->pickerId ?? $this->getStatePath();
+    }
+
+    public function relationship(string|\Closure|null $name = null): static
+    {
+        $this->relationship = $name ?? $this->getName();
+
+        return $this;
+    }
+
+    public function collection(string|\Closure|null $name): static
+    {
+        $this->collection = $name;
+
+        return $this;
+    }
+
+    public function getCollection(): ?string
+    {
+        return $this->evaluate($this->collection);
+    }
+
+    public function getRelationship(): ?\Illuminate\Database\Eloquent\Relations\Relation
+    {
+        $name = $this->evaluate($this->relationship) ?: $this->getName();
+
+        if (! $name) {
+            return null;
+        }
+
+        $record = $this->getRecord();
+
+        if (! $record) {
+            return null;
+        }
+
+        if (! method_exists($record, $name)) {
+            return null;
+        }
+
+        $relationship = $record->{$name}();
+
+        if (! $relationship instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
+            return null;
+        }
+
+        return $relationship;
+    }
+
+    protected function getIdentifiersFromState($state): array
+    {
+        info('getIdentifiersFromState: '.json_encode($state));
+
+        return array_map('strval', array_filter(\Illuminate\Support\Arr::wrap($state)));
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Standard FileUpload is used as a base for UI, but we disable its file handling
+        // Standard FileUpload is used as a base for UI
+        $this->saveRelationshipsUsing(null);
+        $this->fetchFileInformation(false);
+
+        // Generate a stable picker ID for this component instance
+        $this->pickerId = str(static::class)->afterLast('\\')->append('-')->append($this->getName())->toString();
+
+        $this->hintAction(
+            Action::make('browse_media')
+                ->label('Browse Media')
+                ->icon(Heroicon::FolderOpen)
+                ->color('primary')
+                ->schema(function (MediaPicker $component, Action $action): array {
+                    $pickerId = $component->getPickerId();
+                    $actionIndex = $action->getNestingIndex() ?? array_key_last($action->getLivewire()->mountedActions);
+                    $statePath = "mountedActions.{$actionIndex}.data.selected_ids";
+
+                    return [
+                        \Filament\Schemas\Components\Livewire::make(\Slimani\MediaManager\Livewire\MediaBrowser::class, [
+                            'isPicker' => true,
+                            'multiple' => $component->isMultiple(),
+                            'selectedItems' => collect((array) ($component->getState() ?? []))
+                                ->map(fn ($id) => str_starts_with($id, 'file-') ? $id : "file-{$id}")
+                                ->toArray(),
+                            'pickerId' => $pickerId,
+                            'statePath' => $statePath,
+                            'acceptedFileTypes' => $component->getAcceptedFileTypes(),
+                            'onSelect' => serialize(new \Laravel\SerializableClosure\SerializableClosure(function (\Illuminate\Support\Collection $files, \Slimani\MediaManager\Livewire\MediaBrowser $browser) use ($statePath) {
+                                $ids = $files->pluck('id')->implode(',');
+
+                                \Illuminate\Support\Facades\Log::info('MediaPicker onSelect called', [
+                                    'count' => $files->count(),
+                                    'files' => $files->pluck('name', 'id')->toArray(),
+                                    'ids' => $ids,
+                                    'statePath' => $statePath,
+                                ]);
+
+                                $browser->files = $files;
+
+                                $browser->dispatch('sync-picker-ids',
+                                    statePath: $statePath,
+                                    ids: $ids
+                                );
+                            })),
+                        ]),
+                        \Filament\Forms\Components\Hidden::make('selected_ids')
+                            ->extraAttributes([
+                                'x-on:sync-picker-ids.window' => "\$wire.set('{$statePath}', \$event.detail.ids)",
+                            ]),
+                    ];
+                })
+                ->slideOver()
+                ->modalWidth('6xl')
+                ->action(function (MediaPicker $component, array $data) {
+                    $identifiers = array_filter(explode(',', $data['selected_ids'] ?? ''));
+                    $files = \Slimani\MediaManager\Models\File::whereIn('id', $identifiers)->get();
+
+                    \Illuminate\Support\Facades\Log::info('MediaPicker action executed', [
+                        'count' => $files->count(),
+                        'files' => $files->pluck('name', 'id')->toArray(),
+                    ]);
+
+                    $component->state($identifiers);
+                })
+        );
+
+        // No-op hydration since we handle IDs directly
+
+        $this->getUploadedFileUsing(static function (MediaPicker $component, string $file): ?array {
+            $fileRecord = File::find($file);
+
+            if (! $fileRecord) {
+                return null;
+            }
+
+            $media = $fileRecord->getFirstMedia('default');
+
+            $url = null;
+            if ($component->getVisibility() === 'private' && $media) {
+                try {
+                    $url = $media->getTemporaryUrl(now()->addMinutes(30)->endOfHour());
+                } catch (\Throwable $e) {
+                }
+            }
+
+            $url ??= $media?->getUrl() ?? null;
+
+            return [
+                'name' => $media?->name ?? $media?->file_name ?? $fileRecord->name,
+                'size' => $media?->size ?? $fileRecord->size ?? 0,
+                'type' => $media?->mime_type ?? $fileRecord->mime_type,
+                'url' => $url,
+            ];
+        });
+
+        $this->saveUploadedFileUsing(static function (MediaPicker $component, \Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file): ?string {
+            $fileModel = File::create([
+                'name' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+                'uploaded_by_user_id' => auth()->id(),
+                'folder_id' => null, // Ensure direct uploads go to the root folder
+            ]);
+
+            $media = $fileModel->addMediaFromString($file->get())
+                ->usingFileName($file->getClientOriginalName())
+                ->toMediaCollection('default');
+
+            $fileModel->update([
+                'name' => $media->file_name,
+                'size' => $media->size,
+                'mime_type' => $media->mime_type,
+                'extension' => $media->extension,
+                'width' => $media->getCustomProperty('width'),
+                'height' => $media->getCustomProperty('height'),
+            ]);
+
+            return (string) $fileModel->id;
+        });
+
+        // Map IDs/Relationships from model to Identifiers for the picker
+        $this->afterStateHydrated(static function (MediaPicker $component, $state): void {
+            info('afterStateHydrated: '.json_encode($state));
+            if (blank($state)) {
+                $record = $component->getRecord();
+                if ($record) {
+                    $relationship = $component->getRelationship();
+                    if ($relationship) {
+                        if ($relationship instanceof \Illuminate\Database\Eloquent\Relations\BelongsTo) {
+                            $state = $record->getAttribute($relationship->getForeignKeyName());
+                        } elseif ($relationship instanceof \Illuminate\Database\Eloquent\Relations\BelongsToMany or $relationship instanceof \Illuminate\Database\Eloquent\Relations\MorphToMany) {
+                            $state = $relationship->get();
+                        }
+                    } else {
+                        $state = $record->getAttribute($component->getName());
+                    }
+                }
+            }
+
+            if ($state instanceof \Illuminate\Database\Eloquent\Collection) {
+                $component->state($state->map(fn ($file) => (string) $file->id)->filter()->values()->toArray());
+
+                return;
+            }
+
+            if ($state instanceof \Illuminate\Database\Eloquent\Model) {
+                $component->state($component->isMultiple() ? [(string) $state->id] : (string) $state->id);
+
+                return;
+            }
+
+            if (is_scalar($state) && $state !== '') {
+                $component->state($component->isMultiple() ? [(string) $state] : (string) $state);
+
+                return;
+            }
+
+            if (empty($state)) {
+                $component->state($component->isMultiple() ? [] : null);
+            }
+        });
+
+        // Map identifiers back to the database relationships
+        $this->dehydrateStateUsing(static function (MediaPicker $component, $state) {
+            info('dehydrateStateUsing: '.json_encode($state));
+            $identifiers = $component->getIdentifiersFromState($state);
+
+            if ($component->isMultiple()) {
+                return $identifiers;
+            }
+
+            return $identifiers[0] ?? null;
+        });
+
+        // Manually handle relationship saving
+        $this->saveRelationshipsUsing(static function (MediaPicker $component, $state): void {
+            $relationship = $component->getRelationship();
+            $identifiers = $component->getIdentifiersFromState($state);
+
+            if ($relationship instanceof \Illuminate\Database\Eloquent\Relations\BelongsTo) {
+                $record = $component->getRecord();
+                $column = $relationship->getForeignKeyName();
+                $id = $identifiers[0] ?? null;
+
+                if ($record->{$column} != $id) {
+                    $record->{$column} = $id;
+                    $record->save();
+                }
+
+                return;
+            }
+
+            if ($relationship instanceof \Illuminate\Database\Eloquent\Relations\BelongsToMany ||
+                $relationship instanceof \Illuminate\Database\Eloquent\Relations\MorphToMany) {
+
+                $pivotData = [];
+                $collection = $component->getCollection() ?: $component->getName();
+
+                foreach ($identifiers as $id) {
+                    $pivotData[$id] = ['collection' => $collection];
+                }
+
+                $relationship->sync($pivotData);
+
+                return;
+            }
+
+            // Fallback for direct attributes (not relationships)
+            if (! $relationship && ! $component->isMultiple()) {
+                $record = $component->getRecord();
+                if ($record) {
+                    $record->{$component->getName()} = $identifiers[0] ?? null;
+                    $record->save();
+                }
+            }
+        });
+    }
+
+    public function getValidationRules(): array
+    {
+        return []; // Bypass strict FileUpload validation
+    }
+}
