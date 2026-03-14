@@ -18,10 +18,7 @@ class MediaManagerServiceProvider extends PackageServiceProvider
     public function configurePackage(Package $package): void
     {
         $migrations = [
-            'create_media_folders_table',
-            'create_media_files_table',
-            'add_name_to_media_files_table',
-            'create_media_tags_table',
+            'create_media_manager_tables',
         ];
 
         // Filter out migrations that have already been published

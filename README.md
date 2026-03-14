@@ -64,6 +64,95 @@ public function panel(Panel $panel): Panel
 }
 ```
 
+### Prepare Model
+
+To use the media manager with your models, add the `InteractsWithMediaFiles` trait. This is required for relationships and picker functionality.
+
+#### 1. Prepare your Migration
+
+- **For single-file relationships** (like `avatar_id` or `cv_id`), you need to add the foreign key columns to your model's migration:
+
+```php
+Schema::table('users', function (Blueprint $table) {
+    $table->foreignId('avatar_id')->nullable()->constrained('media_files')->nullOnDelete();
+    $table->foreignId('cv_id')->nullable()->constrained('media_files')->nullOnDelete();
+});
+```
+
+- **For multiple/polymorphic relationships** (using `$this->mediaFiles()`), **no migration is required**. These relationships utilize the built-in `media_attachments` table included in the package migrations.
+
+#### 2. Prepare your Model
+
+Add the trait and define your specific relationships. Don't forget to add the foreign keys to your `$fillable` array.
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Slimani\MediaManager\Concerns\InteractsWithMediaFiles;
+
+class User extends Model
+{
+    use InteractsWithMediaFiles;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'avatar_id',
+        'cv_id',
+    ];
+
+    public function avatar(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->mediaFile('avatar_id');
+    }
+
+    public function cv(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->mediaFile('cv_id');
+    }
+
+    /**
+     * Optional: Define custom collection relationships
+     */
+    public function documents(): \Illuminate\Database\Eloquent\Relations\MorphToMany
+    {
+        return $this->mediaFiles('documents');
+    }
+}
+```
+
+### Media Picker Field
+
+Use the `MediaPicker` field in your Filament forms. It uses the "Prepare Model" setup to handle file selection via a modal.
+
+```php
+use Slimani\MediaManager\Form\MediaPicker;
+use Filament\Forms\Form;
+
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            // Single file selection with specific names (requires InteractsWithMediaFiles in Model)
+            MediaPicker::make('avatar_id')
+                ->relationship('avatar')
+                ->label('User Avatar')
+                ->required(),
+
+            MediaPicker::make('cv_id')
+                ->relationship('cv')
+                ->label('User CV'),
+
+            // Multiple file selection (requires MorphToMany relationship in Model)
+            MediaPicker::make('documents')
+                ->relationship('documents')
+                ->multiple()
+                ->label('User Documents'),
+        ]);
+}
+```
+
 ### Plugin Customization
 
 You can customize the Media Manager directly in your Panel Provider:
@@ -85,21 +174,6 @@ MediaManagerPlugin::make()
     ])
     ->header(view('custom.header'))
     ->footer(view('custom.footer'))
-```
-
-### Media Picker Field
-
-Use the `MediaPicker` field in your Filament forms to select files from the media library:
-
-```php
-use Slimani\MediaManager\Forms\Components\MediaPicker;
-
-MediaPicker::make('avatar')
-    ->label('User Avatar')
-    ->disk('public')
-    ->directory('avatars')
-    ->acceptedFileTypes(['image/jpeg', 'image/png'])
-    ->multiple() // Optional
 ```
 
 ### Media Column

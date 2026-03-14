@@ -42,24 +42,4 @@ trait InteractsWithMediaFiles
     {
         return $this->belongsTo(File::class, $column);
     }
-
-    public function avatar(): BelongsTo
-    {
-        return $this->mediaFile('avatar_id');
-    }
-
-    public function cv(): BelongsTo
-    {
-        return $this->mediaFile('cv_id');
-    }
-
-    public function getMediaAvatarUrlAttribute(): ?string
-    {
-        return $this->avatar?->getUrl();
-    }
-
-    public function getMediaCvUrlAttribute(): ?string
-    {
-        return $this->cv?->getUrl();
-    }
 }

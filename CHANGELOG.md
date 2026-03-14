@@ -2,7 +2,20 @@
 
 All notable changes to `filament-media-manager` will be documented in this file.
 
-## v0.6.0 - 2026-03-14
+## v0.7.0 - 2026-03-14
+
+### Fixed
+- Resolved migration publishing errors by merging multiple migration stubs into a single unified migration file.
+- Fixed missing migration stub paths in `MediaManagerServiceProvider`.
+
+### Changed
+- **Breaking**: Refactored `InteractsWithMediaFiles` trait to be more generic. Model-specific relationships like `avatar` and `cv` have been removed from the trait and should now be defined directly in the model (e.g., `User` model).
+- Reorganized documentation to prioritize "Plugin Registration" and "Prepare Model" sections.
+- Improved `MediaPicker` examples in documentation to show relationship-based usage.
+
+### Added
+- Comprehensive testing suite covering components, relationships, and publishing workflows.
+- Instruction for multi/polymorphic relationships in documentation.
 
 ### Added
 - Expanded plugin customization support for navigation (group, label, icon, sort, registration condition).
