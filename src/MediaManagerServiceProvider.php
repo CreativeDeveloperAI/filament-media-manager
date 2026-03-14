@@ -40,10 +40,12 @@ class MediaManagerServiceProvider extends PackageServiceProvider
 
         Livewire::component('media-browser', MediaBrowser::class);
 
+        $selectTreePath = dirname((new \ReflectionClass(\CodeWithDennis\FilamentSelectTree\SelectTree::class))->getFileName(), 2);
+
         FilamentAsset::register([
             Css::make('media-manager-styles', __DIR__.'/../resources/css/media-manager.css')->loadedOnRequest(),
-            AlpineComponent::make('filament-select-tree', __DIR__.'/../vendor/codewithdennis/filament-select-tree/resources/dist/filament-select-tree.js')->loadedOnRequest(),
-            Css::make('filament-select-tree-styles', __DIR__.'/../vendor/codewithdennis/filament-select-tree/resources/dist/filament-select-tree.css')->loadedOnRequest(),
+            AlpineComponent::make('filament-select-tree', $selectTreePath.'/resources/dist/filament-select-tree.js')->loadedOnRequest(),
+            Css::make('filament-select-tree-styles', $selectTreePath.'/resources/dist/filament-select-tree.css')->loadedOnRequest(),
         ], 'slimani/media-manager');
     }
 }
