@@ -2,6 +2,7 @@
 
 namespace Slimani\MediaManager;
 
+use CodeWithDennis\FilamentSelectTree\SelectTree;
 use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
@@ -40,7 +41,7 @@ class MediaManagerServiceProvider extends PackageServiceProvider
 
         Livewire::component('media-browser', MediaBrowser::class);
 
-        $selectTreePath = dirname((new \ReflectionClass(\CodeWithDennis\FilamentSelectTree\SelectTree::class))->getFileName(), 2);
+        $selectTreePath = dirname((new \ReflectionClass(SelectTree::class))->getFileName(), 2);
 
         FilamentAsset::register([
             Css::make('media-manager-styles', __DIR__.'/../resources/css/media-manager.css')->loadedOnRequest(),
