@@ -75,7 +75,10 @@ class MediaManager extends Page implements HasActions, HasForms
 
     protected static function getPlugin(): MediaManagerPlugin
     {
-        return Filament::getPlugin('media-manager');
+        /** @var MediaManagerPlugin $plugin */
+        $plugin = Filament::getPlugin('media-manager');
+
+        return $plugin;
     }
 
     protected function getHeaderActions(): array
