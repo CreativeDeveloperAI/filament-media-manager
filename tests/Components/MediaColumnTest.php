@@ -3,10 +3,10 @@
 namespace Slimani\MediaManager\Tests\Components;
 
 use Filament\Tables\Columns\ImageColumn;
+use Illuminate\Support\Facades\Storage;
 use Slimani\MediaManager\Models\File;
 use Slimani\MediaManager\Tables\Columns\MediaColumn;
 use Slimani\MediaManager\Tests\TestCase;
-use Illuminate\Support\Facades\Storage;
 
 uses(TestCase::class);
 
@@ -16,10 +16,9 @@ beforeEach(function () {
 
 it('extends ImageColumn', function () {
     $column = MediaColumn::make('test');
-    
+
     expect($column)->toBeInstanceOf(ImageColumn::class);
 });
-
 
 it('returns correct image url for File model', function () {
     $file = File::create([
@@ -50,7 +49,6 @@ it('returns correct image url for collection of files', function () {
 
     expect($url)->not->toBeNull();
 });
-
 
 it('returns null for empty state', function () {
     $column = MediaColumn::make('file');
