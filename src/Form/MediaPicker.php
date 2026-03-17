@@ -7,14 +7,13 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Schemas\Components\Livewire;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
-use Laravel\SerializableClosure\SerializableClosure;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Slimani\MediaManager\Livewire\MediaBrowser;
 use Slimani\MediaManager\Models\File;
@@ -133,31 +132,38 @@ class MediaPicker extends FileUpload
                     $pickerId = $component->getPickerId();
                     $actionIndex = $action->getNestingIndex() ?? array_key_last($action->getLivewire()->mountedActions);
                     $statePath = "mountedActions.{$actionIndex}.data.selected_ids";
+                    $folderStatePath = "mountedActions.{$actionIndex}.data.current_folder_id";
+
+                    $actionData = $action->getLivewire()->mountedActions[$actionIndex]['data'] ?? [];
+                    $selectedIds = $actionData['selected_ids'] ?? null;
+                    $currentFolderId = $actionData['current_folder_id'] ?? null;
+
+                    $items = $selectedIds
+                        ? array_map(fn ($id) => "file-{$id}", array_filter(explode(',', $selectedIds)))
+                        : collect((array) ($component->getState() ?? []))
+                            ->map(fn ($id) => str_starts_with($id, 'file-') ? $id : "file-{$id}")
+                            ->toArray();
 
                     return [
                         Livewire::make(MediaBrowser::class, [
                             'isPicker' => true,
                             'multiple' => $component->isMultiple(),
-                            'selectedItems' => collect((array) ($component->getState() ?? []))
-                                ->map(fn ($id) => str_starts_with($id, 'file-') ? $id : "file-{$id}")
-                                ->toArray(),
+                            'selectedItems' => $items,
                             'pickerId' => $pickerId,
                             'statePath' => $statePath,
                             'acceptedFileTypes' => $component->getAcceptedFileTypes(),
-                            'onSelect' => serialize(new SerializableClosure(function (Collection $files, MediaBrowser $browser) use ($statePath) {
-                                $ids = $files->pluck('id')->implode(',');
+                            'onSelect' => null,
+                            'currentFolderId' => (int) $currentFolderId ?: null,
+                        ])->key("media-browser-{$pickerId}-{$actionIndex}"),
 
-                                $browser->files = $files;
-
-                                $browser->dispatch('sync-picker-ids',
-                                    statePath: $statePath,
-                                    ids: $ids
-                                );
-                            })),
-                        ]),
                         Hidden::make('selected_ids')
                             ->extraAttributes([
-                                'x-on:sync-picker-ids.window' => "\$wire.set('{$statePath}', \$event.detail.ids)",
+                                'x-on:sync-picker-ids.window' => "if (\$event.detail.statePath === '{$statePath}') \$wire.set('{$statePath}', \$event.detail.ids, false)",
+                            ]),
+
+                        Hidden::make('current_folder_id')
+                            ->extraAttributes([
+                                'x-on:media-folder-changed.window' => "if (\$event.detail.statePath === '{$statePath}') \$wire.set('{$folderStatePath}', \$event.detail.folderId, false)",
                             ]),
                     ];
                 })
@@ -251,7 +257,7 @@ class MediaPicker extends FileUpload
                 }
             }
 
-            if ($state instanceof \Illuminate\Database\Eloquent\Collection) {
+            if ($state instanceof Collection) {
                 $component->state($state->map(fn ($file) => (string) $file->id)->filter()->values()->toArray());
 
                 return;

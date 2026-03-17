@@ -203,7 +203,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
         array $selectedItems = [],
         ?string $onSelect = null,
         ?string $statePath = null,
-        ?array $acceptedFileTypes = []
+        ?array $acceptedFileTypes = [],
+        ?int $currentFolderId = null
     ): void {
         $this->isPicker = $isPicker;
         $this->multiple = $multiple;
@@ -212,6 +213,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $this->serializedOnSelect = $onSelect;
         $this->statePath = $statePath;
         $this->acceptedFileTypes = $acceptedFileTypes;
+        $this->currentFolderId = $currentFolderId;
 
         if ($this->serializedOnSelect) {
             $this->executeOnSelect();
@@ -614,9 +616,10 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
         if ($this->isPicker && ! $this->multiple) {
             $this->selectedItems = ["file-{$id}"];
-            $this->executeOnSelect();
         } else {
             $this->toggleSelection("file-{$id}");
+
+            return;
         }
 
         $this->clearCachedSchemas();
@@ -649,10 +652,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $this->editingFolderId = null;
         $this->clearCachedSchemas();
 
-        if (str_starts_with($id, 'file-')) {
-            $this->executeOnSelect();
-        }
-
         $this->syncState();
     }
 
@@ -667,10 +666,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
             $this->isEditingTags = false;
             $this->editingFolderId = null;
             $this->clearCachedSchemas();
-
-            if (str_starts_with($id, 'file-')) {
-                $this->executeOnSelect();
-            }
 
             $this->syncState();
         }
@@ -693,9 +688,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
             $files = File::whereIn('id', $fileIds)->get();
 
-            if ($files->isNotEmpty()) {
-                $callback($files, $this);
-            }
+            $callback($files, $this);
         } catch (\Throwable $e) {
             Log::error('Failed to execute onSelect closure: '.$e->getMessage());
         }
@@ -707,6 +700,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
             $ids = collect($this->selectedItems)
                 ->filter(fn ($i) => str_starts_with($i, 'file-'))
                 ->map(fn ($i) => str_replace('file-', '', $i))
+                ->values()
                 ->toArray();
 
             $this->dispatch('sync-picker-ids',
@@ -714,6 +708,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ids: implode(',', $ids),
             );
         }
+
+        $this->executeOnSelect();
     }
 
     public function isAccepted(File $file): bool
@@ -1269,6 +1265,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $this->isEditingTags = false;
         $this->generateBreadcrumbs();
         $this->setPage(1, $this->getPageName());
+
+        $this->dispatch('media-folder-changed', folderId: $id, statePath: $this->statePath);
     }
 
     public function saveTags(): void
