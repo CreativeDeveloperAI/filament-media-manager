@@ -6,12 +6,12 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/slimani/filament-media-manager.svg?style=flat-square)](https://packagist.org/packages/slimani/filament-media-manager)
 [![License](https://img.shields.io/packagist/l/slimani/filament-media-manager.svg?style=flat-square)](https://github.com/slimani-dev/filament-media-manager/blob/main/LICENSE)
 
-A comprehensive media manager plugin for Filament v5.
+A comprehensive media manager plugin for Filament v4 and v5.
 
 ## Features
 
 - **Folder-based organization**: Organize your media into hierarchical folders.
-- **Native Filament integration**: Built specifically for Filament v5 with support for forms, tables, and actions.
+- **Native Filament integration**: Built specifically for Filament with support for forms, tables, and actions across both v4 and v5 versions.
 - **Smooth UI**: Modern, responsive media browser with search and filtering capabilities.
 - **Hierarchical Folder Navigation**: Browse and organize media using a powerful tree selection interface, thanks to `filament-select-tree`.
 - **Taggable media**: Add tags to your files for easier searching and filtering.
@@ -25,10 +25,14 @@ You can install the package via composer:
 composer require slimani/filament-media-manager
 ```
 
-You can publish and run the migrations with:
-
 ```bash
+# Publish Media Manager migrations
 php artisan vendor:publish --tag="media-manager-migrations"
+
+# Publish Spatie MediaLibrary migrations (if not already published)
+php artisan vendor:publish --provider="Spatie\MediaLibrary\MediaLibraryServiceProvider" --tag="medialibrary-migrations"
+
+# Run migrations
 php artisan migrate
 ```
 
@@ -257,7 +261,40 @@ MediaPicker::make('avatar_id')
 
 All components default to the `thumb` conversion if none is specified.
 
-## Testing
+## Testing & Support
+
+### Seeders Example
+
+To populate your media manager with initial data, you can use a seeder. Here is an example of how to set up folders and files:
+
+```php
+use Slimani\MediaManager\Models\Folder;
+use Slimani\MediaManager\Models\File;
+
+public function run(): void
+{
+    $images = Folder::create(['name' => 'Project Images']);
+    $docs = Folder::create(['name' => 'Documents']);
+
+    // here should be the code if you have real files
+    // for now we will use dummy data
+
+    $banner = File::create([
+        'name' => 'Main Banner',
+        'folder_id' => $images->id,
+        'size' => 1024,
+        'extension' => 'jpg',
+        'mime_type' => 'image/jpeg',
+        'uploaded_by_user_id' => 1,
+    ]);
+
+    // Attach actual media using Spatie MediaLibrary
+    $banner->addMediaFromUrl('https://picsum.photos/1200/800')
+        ->toMediaCollection('default');
+}
+```
+
+### Running Tests
 
 ```bash
 composer test
