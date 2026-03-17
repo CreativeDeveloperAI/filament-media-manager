@@ -42,13 +42,18 @@ You can publish the config file with:
 php artisan vendor:publish --tag="media-manager-config"
 ```
 
-## Styles
+## Styling
 
-To include the Tailwind classes that are used in the Media Manager, you need to create a [Custom Theme](https://filamentphp.com/docs/3.x/panels/themes#creating-a-custom-theme) and include the following line in your `theme.css` file:
+If you are using a [Custom Filament Theme](https://filamentphp.com/docs/5.x/styling/overview#creating-a-custom-theme), you must ensure the plugin's styles are included in your CSS build.
+
+Add the following line to your `theme.css` file:
 
 ```css
-@source '../../../../vendor/slimani/filament-media-manager/resources/**/*.blade.php';
+@import '../../../../vendor/slimani/filament-media-manager/resources/css/media-manager.css';
 ```
+
+> [!TIP]
+> While Tailwind v4 supports `@source`, we recommend using `@import` for this plugin. This ensures that styles are loaded correctly even when using `path` repositories (symlinks) during development, which can sometimes cause issues with Tailwind's content scanner.
 
 ## Usage
 
