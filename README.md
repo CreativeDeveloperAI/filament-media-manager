@@ -245,7 +245,8 @@ use Slimani\MediaManager\Form\RichEditor\MediaManagerRichContentPlugin;
 
 RichEditor::make('resume')
     ->plugins([
-        MediaManagerRichContentPlugin::make(),
+        MediaManagerRichContentPlugin::make()
+            ->acceptedFileTypes(["image/*"]), // Optional: Limit to images only
     ])
 ```
 

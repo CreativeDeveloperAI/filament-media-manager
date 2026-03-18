@@ -2,6 +2,14 @@
 
 All notable changes to `filament-media-manager` will be documented in this file.
 
+## v0.9.4 - 2026-03-18
+
+### Added
+- Support for restricting file types in `MediaManagerRichContentPlugin` using `acceptedFileTypes()`.
+
+### Fixed
+- Resolved an issue where non-accepted file types could still be selected in the `MediaBrowser` when using the rich editor integration.
+
 ## v0.7.0 - 2026-03-14
 
 ### Fixed
