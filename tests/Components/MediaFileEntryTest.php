@@ -6,6 +6,7 @@ use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Slimani\MediaManager\Infolists\Components\MediaFileEntry;
 use Slimani\MediaManager\Models\File;
@@ -14,7 +15,7 @@ use Slimani\MediaManager\Tests\TestCase;
 uses(TestCase::class);
 
 beforeEach(function () {
-    \Illuminate\Support\Facades\Storage::fake('public');
+    Storage::fake('public');
 });
 
 it('can render an image file thumbnail', function () {

@@ -3,7 +3,6 @@
 namespace Slimani\MediaManager\Form\RichEditor;
 
 use Filament\Actions\Action;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\RichEditor\EditorCommand;
@@ -16,7 +15,7 @@ use Filament\Support\Icons\Heroicon;
 use Slimani\MediaManager\Livewire\MediaBrowser;
 use Slimani\MediaManager\Models\File;
 
-class MediaManagerRichContentPlugin implements RichContentPlugin, HasToolbarButtons
+class MediaManagerRichContentPlugin implements HasToolbarButtons, RichContentPlugin
 {
     public static function make(): static
     {
