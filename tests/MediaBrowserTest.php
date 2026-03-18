@@ -261,3 +261,12 @@ it('conditionally disables url syncing', function () {
     $picker->isPicker = true;
     expect($picker->queryString())->toBeEmpty();
 });
+
+it('can deselect an item using toggleSelection', function () {
+    $file = File::create(['name' => 'Test File', 'uploaded_by_user_id' => 1]);
+
+    Livewire::test(MediaBrowser::class)
+        ->set('selectedItems', ["file-{$file->id}"])
+        ->call('toggleSelection', "file-{$file->id}")
+        ->assertSet('selectedItems', []);
+});

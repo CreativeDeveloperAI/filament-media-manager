@@ -509,13 +509,28 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                                         ->state($item->name)
                                                         ->icon($item instanceof Folder ? 'heroicon-m-folder' : 'heroicon-m-document')
                                                         ->iconColor($item instanceof Folder ? 'amber' : 'gray')
-                                                        ->action(
-                                                            Action::make('locate_'.$itemKey)
+                                                        ->suffixActions([
+                                                            Action::make('deselect')
                                                                 ->iconButton()
-                                                                ->icon('heroicon-m-magnifying-glass-circle')
-                                                                ->tooltip('Locate in Browser')
-                                                                ->action(fn () => $this->locateItem($itemKey))
-                                                        );
+                                                                ->icon(Heroicon::XMark)
+                                                                ->color('danger')
+                                                                ->action(fn () => $this->toggleSelection($itemKey)),
+                                                            Action::make('locate')
+                                                                ->iconButton()
+                                                                ->icon(Heroicon::OutlinedMagnifyingGlassCircle)
+                                                                ->action(fn () => $this->locateItem($itemKey)),
+                                                            MediaAction::make($item->name)
+                                                                ->iconButton()
+                                                                ->slideOver()
+                                                                ->icon(Heroicon::OutlinedEye)
+                                                                ->media(fn () => $item->getUrl())
+                                                                ->visible($item instanceof File),
+                                                            Action::make('open_url')
+                                                                ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                                                                ->iconButton()
+                                                                ->url(fn () => $item->getUrl(), true)
+                                                                ->visible($item instanceof File),
+                                                        ]);
                                                 })->toArray()),
 
                                                 TextEntry::make('selection_size')
