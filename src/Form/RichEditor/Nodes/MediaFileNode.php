@@ -2,10 +2,10 @@
 
 namespace Slimani\MediaManager\Form\RichEditor\Nodes;
 
-use Tiptap\Core\Node;
-use Tiptap\Utils\HTML;
 use Illuminate\Support\Facades\View;
 use Slimani\MediaManager\Models\File;
+use Tiptap\Core\Node;
+use Tiptap\Utils\HTML;
 
 class MediaFileNode extends Node
 {
@@ -49,7 +49,7 @@ class MediaFileNode extends Node
     {
         return [
             [
-                'tag' => 'div[data-type="' . self::$name . '"]',
+                'tag' => 'div[data-type="'.self::$name.'"]',
             ],
         ];
     }
@@ -73,7 +73,7 @@ class MediaFileNode extends Node
                 'data-type' => self::$name,
                 'class' => 'media-file-node-container',
             ]),
-            ['raw' => $html]
+            ['raw' => $html],
         ];
     }
 }

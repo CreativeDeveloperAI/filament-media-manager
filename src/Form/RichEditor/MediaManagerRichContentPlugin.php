@@ -60,8 +60,8 @@ class MediaManagerRichContentPlugin implements HasFileAttachmentProvider, HasToo
     public function getEditorTools(): array
     {
         return [
-            RichEditorTool::make("mediaLibrary")
-                ->label("Media Library")
+            RichEditorTool::make('mediaLibrary')
+                ->label('Media Library')
                 ->icon(Heroicon::Photo)
                 ->action(),
         ];
@@ -70,10 +70,10 @@ class MediaManagerRichContentPlugin implements HasFileAttachmentProvider, HasToo
     public function getEditorActions(): array
     {
         return [
-            Action::make("mediaLibrary")
-                ->label("Media Library")
+            Action::make('mediaLibrary')
+                ->label('Media Library')
                 ->modalWidth(Width::SixExtraLarge)
-                ->modalSubmitActionLabel("Insert")
+                ->modalSubmitActionLabel('Insert')
                 ->schema(function (RichEditor $component, Action $action): array {
                     $pickerId = $component->getStatePath();
                     // Identify the correct state path inside the action modal
@@ -81,33 +81,33 @@ class MediaManagerRichContentPlugin implements HasFileAttachmentProvider, HasToo
                     $statePath = "mountedActions.{$actionIndex}.data.selected_ids";
                     $folderStatePath = "mountedActions.{$actionIndex}.data.current_folder_id";
 
-                    $actionData = $action->getLivewire()->mountedActions[$actionIndex]["data"] ?? [];
-                    $selectedIds = $actionData["selected_ids"] ?? "";
-                    $currentFolderId = $actionData["current_folder_id"] ?? null;
+                    $actionData = $action->getLivewire()->mountedActions[$actionIndex]['data'] ?? [];
+                    $selectedIds = $actionData['selected_ids'] ?? '';
+                    $currentFolderId = $actionData['current_folder_id'] ?? null;
 
-                    $items = array_map(fn ($id) => "file-{$id}", array_filter(explode(",", $selectedIds)));
+                    $items = array_map(fn ($id) => "file-{$id}", array_filter(explode(',', $selectedIds)));
 
                     return [
                         Livewire::make(MediaBrowser::class, [
-                            "isPicker" => true,
-                            "pickerId" => $pickerId,
-                            "statePath" => $statePath,
-                            "multiple" => true,
-                            "selectedItems" => $items,
-                            "acceptedFileTypes" => $this->getAcceptedFileTypes(),
-                            "currentFolderId" => $currentFolderId ? (int) $currentFolderId : null,
+                            'isPicker' => true,
+                            'pickerId' => $pickerId,
+                            'statePath' => $statePath,
+                            'multiple' => true,
+                            'selectedItems' => $items,
+                            'acceptedFileTypes' => $this->getAcceptedFileTypes(),
+                            'currentFolderId' => $currentFolderId ? (int) $currentFolderId : null,
                         ])->key("media-browser-{$pickerId}-{$actionIndex}"),
-                        Hidden::make("selected_ids")
+                        Hidden::make('selected_ids')
                             ->extraAttributes([
-                                "x-on:sync-picker-ids.window" => "
+                                'x-on:sync-picker-ids.window' => "
                                     if (\$event.detail.statePath === \"{$statePath}\") {
                                         \$wire.set(\"{$statePath}\", \$event.detail.ids)
                                     }
                                 ",
                             ]),
-                        Hidden::make("current_folder_id")
+                        Hidden::make('current_folder_id')
                             ->extraAttributes([
-                                "x-on:media-folder-changed.window" => "
+                                'x-on:media-folder-changed.window' => "
                                     if (\$event.detail.statePath === \"{$statePath}\") {
                                         \$wire.set(\"{$folderStatePath}\", \$event.detail.folderId)
                                     }
@@ -116,7 +116,7 @@ class MediaManagerRichContentPlugin implements HasFileAttachmentProvider, HasToo
                     ];
                 })
                 ->action(function (array $data, RichEditor $component, array $arguments): void {
-                    $ids = array_filter(explode(",", $data["selected_ids"] ?? ""));
+                    $ids = array_filter(explode(',', $data['selected_ids'] ?? ''));
 
                     if (empty($ids)) {
                         return;
@@ -132,7 +132,7 @@ class MediaManagerRichContentPlugin implements HasFileAttachmentProvider, HasToo
                         if (! empty($acceptedTypes)) {
                             $isAccepted = false;
                             foreach ($acceptedTypes as $type) {
-                                $typePattern = str_replace(["/", "*"], ["\/", ".*"], $type);
+                                $typePattern = str_replace(['/', '*'], ["\/", '.*'], $type);
                                 if (preg_match("/^{$typePattern}$/i", $file->mime_type)) {
                                     $isAccepted = true;
                                     break;
@@ -144,7 +144,7 @@ class MediaManagerRichContentPlugin implements HasFileAttachmentProvider, HasToo
                             }
                         }
 
-                        $isImage = str($file->mime_type)->startsWith("image/");
+                        $isImage = str($file->mime_type)->startsWith('image/');
 
                         if ($isImage) {
                             $url = $component->getFileAttachmentUrl($file->id);
@@ -154,30 +154,30 @@ class MediaManagerRichContentPlugin implements HasFileAttachmentProvider, HasToo
                             }
 
                             $commands[] = EditorCommand::make(
-                                "insertContent",
+                                'insertContent',
                                 arguments: [
                                     [
-                                        "type" => "image",
-                                        "attrs" => [
-                                            "src" => $url,
-                                            "alt" => $file->name,
-                                            "title" => $file->name,
-                                            "id" => $file->id,
+                                        'type' => 'image',
+                                        'attrs' => [
+                                            'src' => $url,
+                                            'alt' => $file->name,
+                                            'title' => $file->name,
+                                            'id' => $file->id,
                                         ],
                                     ],
                                 ],
                             );
                         } else {
                             $commands[] = EditorCommand::make(
-                                "insertContent",
+                                'insertContent',
                                 arguments: [
                                     [
-                                        "type" => "mediaFile",
-                                        "attrs" => [
-                                            "id" => $file->id,
-                                            "name" => $file->name,
-                                            "extension" => $file->extension,
-                                            "size" => $file->size,
+                                        'type' => 'mediaFile',
+                                        'attrs' => [
+                                            'id' => $file->id,
+                                            'name' => $file->name,
+                                            'extension' => $file->extension,
+                                            'size' => $file->size,
                                         ],
                                     ],
                                 ],
@@ -185,14 +185,14 @@ class MediaManagerRichContentPlugin implements HasFileAttachmentProvider, HasToo
                         }
                     }
 
-                    $component->runCommands($commands, $arguments["editorSelection"] ?? null);
+                    $component->runCommands($commands, $arguments['editorSelection'] ?? null);
                 }),
         ];
     }
 
     public function getEnabledToolbarButtons(): array
     {
-        return ["mediaLibrary"];
+        return ['mediaLibrary'];
     }
 
     public function getDisabledToolbarButtons(): array
