@@ -23,7 +23,7 @@
 }
 
 .fi-media-item-thumbnail-container {
-    @apply aspect-square relative flex items-center justify-center p-2 rounded-t-xl overflow-hidden bg-gray-50/50 dark:bg-gray-900/30;
+    @apply aspect-square relative flex items-center justify-center rounded-t-xl overflow-hidden bg-gray-50/50 dark:bg-gray-900/30;
 }
 
 .fi-media-item-folder-icon {
@@ -35,7 +35,7 @@
 }
 
 .fi-media-item-file-image {
-    @apply w-full h-full object-cover rounded-lg shadow-sm transition-transform duration-500;
+    @apply w-full h-full object-cover rounded-t-lg shadow-sm transition-transform duration-500;
 }
 
 .fi-media-item:hover .fi-media-item-file-image {
@@ -51,7 +51,7 @@
 }
 
 .fi-media-item-selection-badge {
-    @apply absolute top-2 right-2 z-20 transition-all duration-200;
+    @apply absolute top-2 start-2 z-20 transition-all duration-200;
 }
 
 .fi-media-item-selection-button {
@@ -77,8 +77,75 @@
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)) !important;
 }
 
+.multi-item-select {
+
+    @layer components {
+        .fi-badge {
+            &.fi-size-xs {
+                @apply px-1;
+            }
+        }
+    }
+
+    @layer components {
+        .fi-in-entry {
+            & .fi-in-entry-content-col {
+                display: grid;
+                grid-auto-columns: unset;
+                row-gap: unset;
+            }
+        }
+    }
+}
+
+
 @container media-grid (max-width: 400px) {
     .fi-media-grid {
         grid-template-columns: repeat(2, 1fr) !important;
     }
+}
+
+/* Image Types (Indigo) */
+.fi-media-extension-badge.ext-jpg,
+.fi-media-extension-badge.ext-jpeg,
+.fi-media-extension-badge.ext-png,
+.fi-media-extension-badge.ext-webp,
+.fi-media-extension-badge.ext-gif,
+.fi-media-extension-badge.ext-svg {
+    @apply bg-indigo-100 text-indigo-700 border-indigo-200;
+}
+
+/* PDF (Red) */
+.fi-media-extension-badge.ext-pdf {
+    @apply bg-red-100 text-red-700 border-red-200;
+}
+
+/* Documents (Blue) */
+.fi-media-extension-badge.ext-doc,
+.fi-media-extension-badge.ext-docx {
+    @apply bg-blue-100 text-blue-700 border-blue-200;
+}
+
+/* Spreadsheets (Emerald) */
+.fi-media-extension-badge.ext-xls,
+.fi-media-extension-badge.ext-xlsx,
+.fi-media-extension-badge.ext-csv {
+    @apply bg-emerald-100 text-emerald-700 border-emerald-200;
+}
+
+/* Videos (Purple) */
+.fi-media-extension-badge.ext-mp4,
+.fi-media-extension-badge.ext-mov,
+.fi-media-extension-badge.ext-avi,
+.fi-media-extension-badge.ext-mkv {
+    @apply bg-purple-100 text-purple-700 border-purple-200;
+}
+
+/* Archives (Amber) */
+.fi-media-extension-badge.ext-zip,
+.fi-media-extension-badge.ext-rar,
+.fi-media-extension-badge.ext-7z,
+.fi-media-extension-badge.ext-tar,
+.fi-media-extension-badge.ext-gz {
+    @apply bg-amber-100 text-amber-700 border-amber-200;
 }

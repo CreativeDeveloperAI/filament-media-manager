@@ -227,7 +227,6 @@ class MediaPicker extends FileUpload
                 ->toMediaCollection('default');
 
             $fileModel->update([
-                'name' => $media->file_name,
                 'size' => $media->size,
                 'mime_type' => $media->mime_type,
                 'extension' => $media->extension,

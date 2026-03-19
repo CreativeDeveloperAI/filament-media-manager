@@ -8,37 +8,37 @@
     $isFolder = $item instanceof Folder;
 @endphp
 
-<div 
+<div
     {{ $attributes->class([
         'fi-media-item group',
         'fi-is-selected' => $isSelected,
         'fi-is-disabled' => !($isAccepted ?? true),
     ]) }}
-    x-data="{ 
-        longPressTimeout: null, 
-        isLongPress: false, 
-        isDragging: false, 
-        startPress(e) { 
+    x-data="{
+        longPressTimeout: null,
+        isLongPress: false,
+        isDragging: false,
+        startPress(e) {
             if (!{{ $isAccepted ? 'true' : 'false' }}) return;
-            this.isDragging = false; 
-            this.isLongPress = false; 
-            this.longPressTimeout = setTimeout(() => { 
-                this.isLongPress = true; 
-                $wire.toggleSelection('{{ $isFolder ? "folder-" : "file-" }}{{ $item->id }}'); 
-                if ('vibrate' in navigator) navigator.vibrate(50); 
-            }, 500); 
-        }, 
-        cancelPress() { 
-            clearTimeout(this.longPressTimeout); 
+            this.isDragging = false;
+            this.isLongPress = false;
+            this.longPressTimeout = setTimeout(() => {
+                this.isLongPress = true;
+                $wire.toggleSelection('{{ $isFolder ? "folder-" : "file-" }}{{ $item->id }}');
+                if ('vibrate' in navigator) navigator.vibrate(50);
+            }, 500);
+        },
+        cancelPress() {
+            clearTimeout(this.longPressTimeout);
         },
         handleSingleClick() {
             if (this.isLongPress) return;
-            
+
             @if($isFolder)
                 $wire.setCurrentFolder({{ $item->id }})
             @else
                 if (!{{ $isAccepted ? 'true' : 'false' }}) return;
-                
+
                 $wire.selectFile({{ $item->id }});
                 if (!$wire.isPicker) {
                     $wire.showDetails = true;
@@ -68,9 +68,9 @@
             </div>
         @else
             @if(str($item->mime_type)->startsWith('image/'))
-                <img 
-                    src="{{ $item->getUrl('thumb') }}" 
-                    alt="{{ $item->name }}" 
+                <img
+                    src="{{ $item->getUrl('thumb') }}"
+                    alt="{{ $item->name }}"
                     class="fi-media-item-file-image"
                     loading="lazy"
                 >
@@ -78,7 +78,7 @@
                 <div class="flex flex-col items-center gap-2 transition-transform duration-300 group-hover:scale-110">
                     <div class="relative">
                         <x-heroicon-s-document-text class="fi-media-item-file-icon" />
-                        <span class="absolute bottom-1 right-0 px-1 py-0.5 rounded bg-gray-500 text-white text-[8px] font-bold uppercase ring-1 ring-white dark:ring-gray-800">
+                        <span class="absolute bottom-1 right-0 px-1 py-0.5 rounded fi-media-extension-badge ext-{{ strtolower($item->extension) }} text-[8px] font-bold uppercase ring-1 ring-white dark:ring-gray-800">
                             {{ $item->extension ?? 'FILE' }}
                         </span>
                     </div>
@@ -87,10 +87,10 @@
         @endif
 
         <!-- Selection Badge -->
-        <div 
+        <div
             class="fi-media-item-selection-badge group-selection {{ $isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-0 group-hover:opacity-100 group-hover:scale-100' }}"
         >
-            <button 
+            <button
                 type="button"
                 @if(!$isAccepted) disabled @endif
                 x-on:click.stop="$wire.toggleSelection('{{ $isFolder ? "folder-" : "file-" }}{{ $item->id }}')"
@@ -101,7 +101,7 @@
         </div>
 
         <!-- Selection Overlay (Mobile friendly tap target) -->
-        <div class="absolute inset-0 z-10 cursor-pointer" 
+        <div class="absolute inset-0 z-10 cursor-pointer"
              x-on:click.stop="handleSingleClick">
         </div>
     </div>
@@ -117,7 +117,7 @@
                 @endif
                 <span class="truncate">{{ $item->name }}</span>
             </h4>
-            
+
             <div class="mt-1 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 font-medium">
                 @if($isFolder)
                     <span>{{ $item->children_count + $item->files_count }} items</span>

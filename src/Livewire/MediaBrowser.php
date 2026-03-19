@@ -132,7 +132,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
         }
     }
 
-    public function queryString()
+    public function queryString(): array
     {
         if ($this->isPicker) {
             return [];
@@ -213,6 +213,11 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $this->serializedOnSelect = $onSelect;
         $this->statePath = $statePath;
         $this->acceptedFileTypes = $acceptedFileTypes;
+
+        if (! $this->isPicker && is_null($currentFolderId)) {
+            $currentFolderId = request()->query('folder');
+        }
+
         $this->currentFolderId = $currentFolderId;
 
         if ($this->serializedOnSelect) {
@@ -324,13 +329,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
                             Flex::make([
                                 $this->createFolderAction(),
                                 $this->uploadAction(),
-                            ])->extraAttributes([
-                                'class' => 'gap-2',
-                            ])->visible(fn () => count($this->selectedItems) == 0),
-
-                            Flex::make([
-                                $this->bulkMoveAction(),
-                                $this->bulkDeleteAction(),
                                 Action::make('clearSelection')
                                     ->label('Clear')
                                     ->icon(Heroicon::XMark)
@@ -339,8 +337,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                     ->action(fn () => $this->clearSelection()),
                             ])->extraAttributes([
                                 'class' => 'gap-2',
-                            ])->from('xs')
-                                ->visible(fn () => count($this->selectedItems) > 0),
+                            ]),
 
                             Flex::make([
                                 TextInput::make('search')
@@ -509,6 +506,34 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                                         ->state($item->name)
                                                         ->icon($item instanceof Folder ? 'heroicon-m-folder' : 'heroicon-m-document')
                                                         ->iconColor($item instanceof Folder ? 'amber' : 'gray')
+                                                        ->belowContent(function () use ($item) {
+                                                            if ($item instanceof Folder) {
+                                                                $itemsCount = $item->children_count + $item->files_count;
+
+                                                                return TextEntry::make('items_count')
+                                                                    ->hiddenLabel()
+                                                                    ->state(" {$itemsCount} items")
+                                                                    ->size(TextSize::ExtraSmall)
+                                                                    ->color('gray')
+                                                                    ->badge();
+                                                            } else {
+                                                                return Flex::make([
+                                                                    TextEntry::make('items_count')
+                                                                        ->hiddenLabel()
+                                                                        ->state(str($item->extension)->upper() ?? 'FILE')
+                                                                        ->size(TextSize::ExtraSmall)
+                                                                        ->badge(),
+                                                                    TextEntry::make('items_count')
+                                                                        ->hiddenLabel()
+                                                                        ->state(Number::fileSize($item->size ?? 0))
+                                                                        ->size(TextSize::ExtraSmall)
+                                                                        ->color('gray')
+                                                                        ->badge(),
+                                                                ])->extraAttributes([
+                                                                    'class' => 'gap-1',
+                                                                ]);
+                                                            }
+                                                        })
                                                         ->suffixActions([
                                                             Action::make('deselect')
                                                                 ->iconButton()
@@ -531,7 +556,10 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                                                 ->url(fn () => $item->getUrl(), true)
                                                                 ->visible($item instanceof File),
                                                         ]);
-                                                })->toArray()),
+                                                })->toArray())
+                                                    ->extraAttributes([
+                                                        'class' => 'multi-item-select',
+                                                    ]),
 
                                                 TextEntry::make('selection_size')
                                                     ->label('Total Size')
@@ -597,6 +625,18 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                                 ->color('gray'),
                                         ];
                                     }),
+                            ])
+                            ->footerActions([
+                                $this->bulkMoveAction()
+                                    ->visible(fn () => count($this->selectedItems) > 0),
+                                $this->bulkDeleteAction()
+                                    ->visible(fn () => count($this->selectedItems) > 0),
+                                Action::make('clearSelection')
+                                    ->label('Clear')
+                                    ->icon(Heroicon::XMark)
+                                    ->color('danger')
+                                    ->outlined()
+                                    ->action(fn () => $this->clearSelection()),
                             ]),
                     ]),
             ]);
@@ -1347,8 +1387,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
     {
         return Action::make('bulkMove')
             ->label('Move')
-            ->icon(Heroicon::FolderArrowDown)
-            ->color('gray')
+            ->icon(Heroicon::ArrowsRightLeft)
             ->schema([
                 SelectTree::make('folder_id')
                     ->label('Target Folder')
@@ -1508,7 +1547,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
                         }
 
                         $fileModel->update([
-                            'name' => $media->file_name,
                             'size' => $media->size,
                             'mime_type' => $media->mime_type,
                             'extension' => $media->extension,
