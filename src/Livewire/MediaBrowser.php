@@ -1493,6 +1493,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 FileUpload::make('files')
                     ->label('Files')
                     ->multiple()
+                    ->preserveFilenames()
                     ->disk(fn () => filament('media-manager')->getDisk())
                     ->required(),
                 TagsInput::make('tags')
@@ -1502,7 +1503,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
             ])
             ->action(function (array $data) {
                 foreach ($data['files'] as $file) {
-
                     $filename = $file instanceof UploadedFile
                         ? $file->getClientOriginalName()
                         : basename($file);

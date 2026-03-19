@@ -2,6 +2,11 @@
 
 All notable changes to `filament-media-manager` will be documented in this file.
 
+## v0.9.8 - 2026-03-19
+
+### Fixed
+- Fixed an issue where original filenames were not preserved during upload in the Media Browser, causing them to use temporary hashes instead.
+
 ## v0.9.4 - 2026-03-18
 
 ### Added
