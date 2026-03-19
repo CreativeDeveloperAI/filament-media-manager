@@ -22,7 +22,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Slimani\MediaManager\Form\MediaPicker;
+use Livewire\Attributes\On;
 use Slimani\MediaManager\MediaManagerPlugin;
 use Slimani\MediaManager\Models\File;
 
@@ -32,6 +32,14 @@ class MediaManager extends Page implements HasActions, HasForms
     use InteractsWithForms, InteractsWithSchemas {
         InteractsWithForms::getCachedSchemas insteadof InteractsWithSchemas;
         InteractsWithSchemas::getCachedSchemas as getBaseCachedSchemas;
+    }
+
+    public array $selectedFileIds = [];
+
+    #[On('media-selection-synced')]
+    public function syncSelection(array $ids): void
+    {
+        $this->selectedFileIds = $ids;
     }
 
     public function boot(): void
@@ -117,10 +125,6 @@ class MediaManager extends Page implements HasActions, HasForms
                     ->label(__('Regenerate Conversions'))
                     ->icon('heroicon-m-arrow-path')
                     ->schema([
-                        MediaPicker::make('ids')
-                            ->label(__('Media Items'))
-                            ->multiple()
-                            ->helperText(__('Select specific media items to regenerate conversions for. Leave empty for all.')),
                         Select::make('conversions')
                             ->label(__('Specific Conversions'))
                             ->multiple()
@@ -139,14 +143,16 @@ class MediaManager extends Page implements HasActions, HasForms
                         Checkbox::make('force')
                             ->label(__('Force Regeneration')),
                     ])
+                    ->modalHeading(fn () => count($this->selectedFileIds) > 0 ? __('Regenerate Conversions for :count items', ['count' => count($this->selectedFileIds)]) : __('Regenerate Conversions for all items'))
+                    ->modalDescription(fn () => count($this->selectedFileIds) > 0 ? null : __('This will regenerate conversions for all media items in the library. This may take some time.'))
                     ->successNotificationTitle(__('Media regeneration started successfully.'))
                     ->action(function (array $data) {
                         $params = [
                             'modelType' => File::class,
                         ];
 
-                        if (! empty($data['ids'])) {
-                            $params['--ids'] = implode(',', (array) $data['ids']);
+                        if (! empty($this->selectedFileIds)) {
+                            $params['--ids'] = implode(',', $this->selectedFileIds);
                         }
 
                         if (! empty($data['conversions'])) {

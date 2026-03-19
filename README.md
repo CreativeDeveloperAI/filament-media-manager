@@ -286,7 +286,20 @@ MediaManagerPlugin::make()
     ])
     ->header(view('custom.header'))
     ->footer(view('custom.footer'))
+    ->withVideoThumbnails() // Optional: Enable video thumbnails (requires FFMPEG)
 ```
+
+#### Video Thumbnails
+
+Thumbnail generation for videos is handled natively by the underlying Spatie MediaLibrary when **FFMPEG** and **FFProbe** are installed on your server.
+
+To use this feature, you must install the FFMPEG PHP dependency:
+
+```bash
+composer require php-ffmpeg/php-ffmpeg
+```
+
+For more information on video processing requirements, please refer to the [Spatie MediaLibrary Documentation](https://spatie.be/docs/laravel-medialibrary/v11/advanced-usage/generating-thumbnails-for-videos).
 
 #### Media Library Conversions
 

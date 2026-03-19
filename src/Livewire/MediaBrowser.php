@@ -250,6 +250,21 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $this->dispatch('open-modal', id: 'media-browser-modal');
     }
 
+    public function updatedSelectedItems(): void
+    {
+        $this->syncState();
+    }
+
+    public function getActions(): array
+    {
+        return [
+            $this->createFolderAction(),
+            $this->uploadAction(),
+            $this->bulkMoveAction(),
+            $this->bulkDeleteAction(),
+        ];
+    }
+
     public function toggleDetailsAction(): Action
     {
         return Action::make('toggleDetails')
@@ -329,12 +344,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
                             Flex::make([
                                 $this->createFolderAction(),
                                 $this->uploadAction(),
-                                Action::make('clearSelection')
-                                    ->label('Clear')
-                                    ->icon(Heroicon::XMark)
-                                    ->color('danger')
-                                    ->outlined()
-                                    ->action(fn () => $this->clearSelection()),
+                                $this->clearSelectionAction()
+                                    ->visible(fn () => count($this->selectedItems) > 1),
                             ])->extraAttributes([
                                 'class' => 'gap-2',
                             ]),
@@ -631,12 +642,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                     ->visible(fn () => count($this->selectedItems) > 0),
                                 $this->bulkDeleteAction()
                                     ->visible(fn () => count($this->selectedItems) > 0),
-                                Action::make('clearSelection')
-                                    ->label('Clear')
-                                    ->icon(Heroicon::XMark)
-                                    ->color('danger')
-                                    ->outlined()
-                                    ->action(fn () => $this->clearSelection()),
+                                $this->clearSelectionAction()
+                                    ->visible(fn () => count($this->selectedItems) > 0),
                             ]),
                     ]),
             ]);
@@ -656,6 +663,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
             $this->selectedFileId = null;
             $this->clearCachedSchemas();
             $this->dispatch('media-deleted');
+            $this->syncState(); // Added syncState call
         }
     }
 
@@ -751,18 +759,20 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
     protected function syncState(): void
     {
-        if ($this->statePath) {
-            $ids = collect($this->selectedItems)
-                ->filter(fn ($i) => str_starts_with($i, 'file-'))
-                ->map(fn ($i) => str_replace('file-', '', $i))
-                ->values()
-                ->toArray();
+        $ids = collect($this->selectedItems)
+            ->filter(fn ($i) => str_starts_with($i, 'file-'))
+            ->map(fn ($i) => (int) str_replace('file-', '', $i))
+            ->values()
+            ->toArray();
 
+        if ($this->statePath) {
             $this->dispatch('sync-picker-ids',
                 statePath: $this->statePath,
                 ids: implode(',', $ids),
             );
         }
+
+        $this->dispatch('media-selection-synced', ids: $ids);
 
         $this->executeOnSelect();
     }
@@ -787,6 +797,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
     {
         $this->selectedItems = [];
         $this->clearCachedSchemas();
+        $this->syncState();
     }
 
     /**
@@ -1057,17 +1068,25 @@ class MediaBrowser extends Component implements HasActions, HasForms
         return [
             ImageEntry::make('sel_preview')
                 ->hiddenLabel()
-                ->state($file->getUrl('preview'))
+                ->state(static function () use ($file) {
+                    $url = $file->getUrl('preview');
+
+                    return str($url)->replace('–', '%E2%80%93')->toString();
+                })
                 ->imageWidth('100%')
                 ->imageHeight('auto')
                 ->extraImgAttributes(['class' => 'object-contain w-full'])
-                ->visible(collect(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'])->contains($file->mime_type)),
+                ->visible(static function () use ($file) {
+                    $mimeType = $file->mime_type;
+
+                    return str($mimeType)->startsWith('image/') || str($mimeType)->startsWith('video/');
+                }),
 
             TextEntry::make('sel_thumb')
                 ->hiddenLabel()
                 ->state(new HtmlString(Blade::render('<div class="flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg h-32"><x-heroicon-o-document-text class="w-12 h-12 text-gray-400" /></div>')))
                 ->html()
-                ->visible(! collect(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'])->contains($file->mime_type)),
+                ->visible(! str($file->mime_type)->startsWith('image/') && ! str($file->mime_type)->startsWith('video/')),
 
             TextEntry::make('sel_name')
                 ->hiddenLabel()
@@ -1370,6 +1389,16 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $this->breadcrumbs = $breadcrumbs;
     }
 
+    public function clearSelectionAction(): Action
+    {
+        return Action::make('clearSelection')
+            ->label('Clear')
+            ->icon(Heroicon::XMark)
+            ->color('danger')
+            ->outlined()
+            ->action(fn () => $this->clearSelection());
+    }
+
     public function bulkDeleteAction(): Action
     {
         return Action::make('bulkDelete')
@@ -1630,6 +1659,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
         $this->selectedItems = [];
         $this->clearCachedSchemas();
+        $this->syncState();
         $this->dispatch('media-updated');
 
         Notification::make()
@@ -1685,6 +1715,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
         $this->selectedItems = [];
         $this->clearCachedSchemas();
+        $this->syncState();
         $this->dispatch('media-updated');
 
         Notification::make()
