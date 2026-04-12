@@ -74,7 +74,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
     public ?Folder $currentFolder = null;
 
-    // UI State
+    // حالة واجهة المستخدم
     public string $search = '';
 
     public string $sortField = '';
@@ -85,7 +85,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
     public array $breadcrumbs = [];
 
-    // Tag State
+    // حالة الوسوم
     public bool $isEditingTags = false;
 
     public array $activeTags = [];
@@ -94,7 +94,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
     public ?int $selectedFileId = null;
 
-    // Picker State
+    // حالة منتقي الملفات
     public bool $showDetails = true;
 
     public bool $isPicker = false;
@@ -103,7 +103,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
     public ?string $pickerId = null;
 
-    // Filters State
+    // حالة الفلاتر
     public bool $showFilters = false;
 
     public bool $showSelectedOnly = false;
@@ -268,7 +268,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
     public function toggleDetailsAction(): Action
     {
         return Action::make('toggleDetails')
-            ->label('Details')
+            ->label('التفاصيل')
             ->icon('heroicon-o-information-circle')
             ->hiddenLabel()
             ->color(fn () => $this->showDetails ? 'primary' : 'gray')
@@ -281,7 +281,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
     public function toggleFiltersAction(): Action
     {
         return Action::make('toggleFilters')
-            ->label('Filters')
+            ->label('الفلاتر')
             ->hiddenLabel()
             ->icon('heroicon-o-funnel')
             ->color(fn () => $this->showFilters || $this->hasActiveFilters() ? 'primary' : 'gray')
@@ -295,7 +295,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
     public function toggleSortDirectionAction(): Action
     {
         return Action::make('toggleSortDirection')
-            ->label('Sort Direction')
+            ->label('اتجاه الترتيب')
             ->hiddenLabel()
             ->icon(fn () => $this->sortDirection === 'asc' ? 'heroicon-o-bars-arrow-up' : 'heroicon-o-bars-arrow-down')
             ->color('gray')
@@ -355,20 +355,20 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                     ->live()
                                     ->debounce()
                                     ->hiddenLabel()
-                                    ->placeholder('Search files...')
+                                    ->placeholder('البحث في الملفات...')
                                     ->prefixIcon('heroicon-m-magnifying-glass')
                                     ->columnSpan(1),
                                 Flex::make([
                                     Select::make('sortField')
                                         ->hiddenLabel()
                                         ->options([
-                                            'name' => 'Name',
-                                            'created_at' => 'Date',
-                                            'size' => 'Size',
-                                            'mime_type' => 'Type',
+                                            'name' => 'الاسم',
+                                            'created_at' => 'التاريخ',
+                                            'size' => 'الحجم',
+                                            'mime_type' => 'النوع',
                                         ])
                                         ->live()
-                                        ->placeholder('Sort')
+                                        ->placeholder('ترتيب')
                                         ->extraAttributes([
                                             'class' => 'md:w-32',
                                         ])->grow(),
@@ -391,32 +391,32 @@ class MediaBrowser extends Component implements HasActions, HasForms
                             ->schema([
                                 Grid::make(['default' => 1, 'md' => 4])->schema([
                                     Select::make('filterType')
-                                        ->label('File Type')
+                                        ->label('نوع الملف')
                                         ->options([
-                                            'image' => 'Images',
-                                            'video' => 'Videos',
-                                            'audio' => 'Audio',
-                                            'document' => 'Documents',
-                                            'archive' => 'Archives',
+                                            'image' => 'صور',
+                                            'video' => 'فيديو',
+                                            'audio' => 'صوت',
+                                            'document' => 'مستندات',
+                                            'archive' => 'ملفات مضغوطة',
                                         ])
-                                        ->placeholder('All Types')
+                                        ->placeholder('جميع الأنواع')
                                         ->live()
                                         ->columnSpan(1),
                                     Select::make('filterTags')
-                                        ->label('Tags')
+                                        ->label('الوسوم')
                                         ->multiple()
                                         ->options(Tag::pluck('name', 'id'))
                                         ->live()
                                         ->searchable()
                                         ->columnSpan(1),
                                     TextInput::make('filterSizeMin')
-                                        ->label('Min Size (MB)')
+                                        ->label('الحجم الأدنى (ميجابايت)')
                                         ->numeric()
                                         ->live()
                                         ->debounce()
                                         ->columnSpan(1),
                                     TextInput::make('filterSizeMax')
-                                        ->label('Max Size (MB)')
+                                        ->label('الحجم الأقصى (ميجابايت)')
                                         ->numeric()
                                         ->live()
                                         ->debounce()
@@ -424,7 +424,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                 ]),
                                 Flex::make([
                                     Action::make('closeFilter')
-                                        ->label('Close')
+                                        ->label('إغلاق')
                                         ->icon(Heroicon::XCircle)
                                         ->color('danger')
                                         ->action(function () {
@@ -432,7 +432,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                             $this->clearCachedSchemas();
                                         }),
                                     Action::make('clearFilters')
-                                        ->label('Clear Filters')
+                                        ->label('مسح الفلاتر')
                                         ->color('danger')
                                         ->outlined()
                                         ->disabled(fn () => ! $this->hasActiveFilters())
@@ -447,7 +447,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                             ->columnSpanFull(),
                         \Slimani\MediaManager\Components\Section::make()
                             ->heading(view('media-manager::components.breadcrumbs', ['breadcrumbs' => $this->breadcrumbs]))
-                            ->columnSpan(fn () => ['lg' => $this->showDetails ? 3 : 4]) // Dynamic Column Span
+                            ->columnSpan(fn () => ['lg' => $this->showDetails ? 3 : 4])
                             ->extraAttributes([
                                 'class' => 'fi-media-grid-container',
                             ])
@@ -467,8 +467,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                     ])
                                     ->visible(fn () => $this->getItemsProperty()->isNotEmpty()),
 
-                                EmptyState::make('No files found')
-                                    ->description('Upload a file or create a folder to get started.')
+                                EmptyState::make('لا توجد ملفات')
+                                    ->description('قم برفع ملف أو إنشاء مجلد للبدء.')
                                     ->icon(Heroicon::Document)
                                     ->contained(false)
                                     ->footer([
@@ -485,14 +485,14 @@ class MediaBrowser extends Component implements HasActions, HasForms
                             ->contained(false),
 
                         \Slimani\MediaManager\Components\Section::make()
-                            ->heading('Details')
+                            ->heading('التفاصيل')
                             ->extraAttributes([
                                 'class' => 'flex h-full no-negative-header-margin',
                             ])
                             ->columnSpan(['lg' => 1])
                             ->visible(fn () => $this->showDetails)
                             ->schema([
-                                // 1. SELECTION DETAILS (1 or more items)
+                                // 1. تفاصيل العنصر المحدد (عنصر واحد أو أكثر)
                                 Grid::make(1)
                                     ->visible(fn () => count($this->selectedItems) > 0)
                                     ->schema(function () {
@@ -503,7 +503,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                             return [
                                                 TextEntry::make('selection_title')
                                                     ->hiddenLabel()
-                                                    ->state(fn () => count($this->selectedItems).' items selected')
+                                                    ->state(fn () => count($this->selectedItems).' عناصر محددة')
                                                     ->weight(FontWeight::Bold)
                                                     ->size(TextSize::Large),
 
@@ -523,7 +523,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
                                                                 return TextEntry::make('items_count')
                                                                     ->hiddenLabel()
-                                                                    ->state(" {$itemsCount} items")
+                                                                    ->state(" {$itemsCount} عناصر")
                                                                     ->size(TextSize::ExtraSmall)
                                                                     ->color('gray')
                                                                     ->badge();
@@ -531,7 +531,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                                                 return Flex::make([
                                                                     TextEntry::make('extension')
                                                                         ->hiddenLabel()
-                                                                        ->state(filled($item->extension) ? str($item->extension)->upper() : 'FILE')
+                                                                        ->state(filled($item->extension) ? str($item->extension)->upper() : 'ملف')
                                                                         ->size(TextSize::ExtraSmall)
                                                                         ->badge(),
                                                                     TextEntry::make('size')
@@ -573,17 +573,17 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                                     ]),
 
                                                 TextEntry::make('selection_size')
-                                                    ->label('Total Size')
+                                                    ->label('الحجم الإجمالي')
                                                     ->state(fn () => Number::fileSize($this->getSelectedItemsDataProperty()['size'] ?? 0))
                                                     ->badge(),
 
                                                 Flex::make([
                                                     TextEntry::make('selection_files')
-                                                        ->label('Files')
+                                                        ->label('الملفات')
                                                         ->state(fn () => collect($this->selectedItems)->filter(fn ($i) => str_starts_with($i, 'file-'))->count())
                                                         ->badge(),
                                                     TextEntry::make('selection_folders')
-                                                        ->label('Folders')
+                                                        ->label('المجلدات')
                                                         ->state(fn () => $this->getSelectedItemsDataProperty()['folders_count'] ?? 0)
                                                         ->visible(fn () => ($this->getSelectedItemsDataProperty()['folders_count'] ?? 0) > 0)
                                                         ->badge(),
@@ -615,7 +615,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                         return $folder ? $this->folderDetailsSchema($folder) : [];
                                     }),
 
-                                // 2. NO SELECTION FALLBACK (Current Folder or Root)
+                                // 2. لا يوجد تحديد - عرض المجلد الحالي أو الجذر
                                 Grid::make(1)
                                     ->visible(fn () => empty($this->selectedItems))
                                     ->schema(function () {
@@ -626,13 +626,13 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                         return [
                                             TextEntry::make('root_info')
                                                 ->hiddenLabel()
-                                                ->state('Media Library')
+                                                ->state('مكتبة الوسائط')
                                                 ->weight(FontWeight::Bold)
                                                 ->size(TextSize::Large),
 
                                             TextEntry::make('root_desc')
                                                 ->hiddenLabel()
-                                                ->state('Select a file or folder to view details.')
+                                                ->state('حدد ملفاً أو مجلداً لعرض التفاصيل.')
                                                 ->color('gray'),
                                         ];
                                     }),
@@ -663,7 +663,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
             $this->selectedFileId = null;
             $this->clearCachedSchemas();
             $this->dispatch('media-deleted');
-            $this->syncState(); // Added syncState call
+            $this->syncState();
         }
     }
 
@@ -753,7 +753,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
             $callback($files, $this);
         } catch (\Throwable $e) {
-            Log::error('Failed to execute onSelect closure: '.$e->getMessage());
+            Log::error('فشل تنفيذ دالة onSelect: '.$e->getMessage());
         }
     }
 
@@ -816,20 +816,14 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $column = $isFolder ? 'parent_id' : 'folder_id';
 
         if ($this->search || $this->hasActiveFilters()) {
-            // 1. Recursive Tree Scope
             if ($this->currentFolderId !== null) {
-                // Fetch current folder + all recursive descendants
                 $folderIds = array_merge(
                     [$this->currentFolderId],
                     $this->currentFolder?->getAllDescendantIds() ?? []
                 );
                 $query->whereIn($column, $folderIds);
             }
-            // If currentFolderId is null, we are at Root.
-            // By default, every folder is either at Root (parent_id null) or is a descendant.
-            // So we don't need a strict whereIn at root as it would be the entire table.
 
-            // 2. Search Keyword
             if ($this->search) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', "%{$this->search}%")
@@ -837,14 +831,12 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 });
             }
 
-            // 3. Filter Tags
             if (! empty($this->filterTags)) {
                 $query->whereHas('tags', function ($q) {
                     $q->whereIn('media_tags.id', $this->filterTags);
                 });
             }
         } else {
-            // Not searching/filtering: only show direct children of the current folder
             $query->where($column, $this->currentFolderId);
         }
 
@@ -853,7 +845,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
     public function getFoldersProperty()
     {
-        // Don't fetch folders if user specifically filters by file types or sizes
         if (($this->filterType || ($this->filterSizeMin !== null && $this->filterSizeMin !== '') || ($this->filterSizeMax !== null && $this->filterSizeMax !== '')) && ($this->search || $this->hasActiveFilters())) {
             return collect();
         }
@@ -873,7 +864,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
         $query = $this->applySearchAndFiltersAndDeepSearchToQuery($query, false);
 
-        // Apply file-specific criteria
         if ($this->search || $this->hasActiveFilters()) {
             if ($this->filterType) {
                 if ($this->filterType === 'document') {
@@ -886,11 +876,11 @@ class MediaBrowser extends Component implements HasActions, HasForms
             }
 
             if ($this->filterSizeMin !== null && $this->filterSizeMin !== '') {
-                $query->where('size', '>=', (float) $this->filterSizeMin * 1024 * 1024); // MB to Bytes
+                $query->where('size', '>=', (float) $this->filterSizeMin * 1024 * 1024);
             }
 
             if ($this->filterSizeMax !== null && $this->filterSizeMax !== '') {
-                $query->where('size', '<=', (float) $this->filterSizeMax * 1024 * 1024); // MB to Bytes
+                $query->where('size', '<=', (float) $this->filterSizeMax * 1024 * 1024);
             }
         }
 
@@ -942,7 +932,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
         };
 
         $allItems = $allItems->sort(function ($a, $b) use ($sortProperty, $sortCallback) {
-            // Folders always first (priority 0) then files (priority 1)
             $aPriority = $a instanceof Folder ? 0 : 1;
             $bPriority = $b instanceof Folder ? 0 : 1;
 
@@ -950,7 +939,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 return $aPriority <=> $bPriority;
             }
 
-            // Same category? Apply standard sort
             $valA = $sortCallback($a);
             $valB = $sortCallback($b);
 
@@ -963,7 +951,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
         $allItems = $allItems->values();
 
-        // Manual pagination logic
         $page = $this->getPage($this->getPageName());
         $perPage = $this->perPage;
 
@@ -1037,15 +1024,12 @@ class MediaBrowser extends Component implements HasActions, HasForms
                     $descendantIds = $folder->getAllDescendantIds();
                     $allFolderIdsInThisSelection = array_merge([$folder->id], $descendantIds);
 
-                    // Add all folders found in this branch to the total count
                     $foldersCount += count($allFolderIdsInThisSelection);
 
-                    // Add all files found in this branch
                     $filesCount += File::whereIn('folder_id', $allFolderIdsInThisSelection)->count();
                     $totalSize += File::whereIn('folder_id', $allFolderIdsInThisSelection)->sum('size');
                 }
             } else {
-                // It's a single file selection
                 $file = File::find($id);
                 if ($file) {
                     $items[] = $file;
@@ -1095,11 +1079,11 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
             Flex::make([
                 TextEntry::make('sel_size')
-                    ->label('Size')
+                    ->label('الحجم')
                     ->state(Number::fileSize($file->size ?? 0))
                     ->badge(),
                 TextEntry::make('sel_type')
-                    ->label('Type')
+                    ->label('النوع')
                     ->state($file->mime_type)
                     ->badge(),
             ]),
@@ -1113,7 +1097,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ->visible((bool) $file->alt_text),
 
             TextEntry::make('sel_path')
-                ->label('Public URL')
+                ->label('الرابط العام')
                 ->state($file->getUrl())
                 ->copyable()
                 ->limit(30)
@@ -1134,13 +1118,13 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ]),
 
             TextEntry::make('sel_created_at')
-                ->label('Uploaded')
+                ->label('تاريخ الرفع')
                 ->state($file->created_at)
                 ->since()
                 ->color('gray'),
 
             TagsInput::make('activeTags')
-                ->label('Tags')
+                ->label('الوسوم')
                 ->suggestions(Tag::pluck('name')->toArray())
                 ->live()
                 ->visible(fn () => $this->isEditingTags)
@@ -1152,8 +1136,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ),
 
             TextEntry::make('tags_display')
-                ->label('Tags')
-                ->state($file->tags->pluck('name') ?: 'No tags')
+                ->label('الوسوم')
+                ->state($file->tags->pluck('name') ?: 'لا توجد وسوم')
                 ->visible(fn () => ! $this->isEditingTags)
                 ->badge()
                 ->hintAction(
@@ -1177,49 +1161,36 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
         return [
             TextEntry::make('sel_folder_name')
-                ->label('Folder')
+                ->label('المجلد')
                 ->state($folder->name)
                 ->weight(FontWeight::Bold)
                 ->size(TextSize::Large),
 
             TextEntry::make('sel_folder_created_at')
-                ->label('Created')
+                ->label('تاريخ الإنشاء')
                 ->state($folder->created_at)
                 ->date(),
 
             TextEntry::make('sel_folder_total_size')
-                ->label('Total Size')
+                ->label('الحجم الإجمالي')
                 ->state(Number::fileSize($recursiveStats['total_size']))
                 ->badge()
                 ->color('success'),
 
             Flex::make([
-                /*TextEntry::make('sel_folder_items')
-                    ->label('Children')
-                    ->state(($folder->children_count ?? 0) + ($folder->files_count ?? 0))
-                    ->suffix(' items'),*/
-
-                /* TextEntry::make('sel_folder_recursive_items')
-                     ->label('Total Items')
-                     ->state($recursiveStats['files_count'] + $recursiveStats['folders_count'])
-                     ->suffix(' items')
-                     ->badge(),*/
-
-                // Separated Files Count
                 TextEntry::make('sel_folder_recursive_files')
-                    ->label('Files')
+                    ->label('الملفات')
                     ->state($recursiveStats['files_count'])
                     ->badge(),
 
-                // Separated Folders Count (Nested sub-folders)
                 TextEntry::make('sel_folder_recursive_folders')
-                    ->label('Folders')
+                    ->label('المجلدات')
                     ->state($recursiveStats['folders_count'])
                     ->badge(),
             ]),
 
             TagsInput::make('activeTags')
-                ->label('Tags')
+                ->label('الوسوم')
                 ->suggestions(Tag::pluck('name')->toArray())
                 ->live()
                 ->visible(fn () => $this->isEditingTags)
@@ -1231,8 +1202,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ),
 
             TextEntry::make('folder_tags_display')
-                ->label('Tags')
-                ->state($folder->tags->pluck('name') ?: 'No tags')
+                ->label('الوسوم')
+                ->state($folder->tags->pluck('name') ?: 'لا توجد وسوم')
                 ->visible(fn () => ! $this->isEditingTags)
                 ->badge()
                 ->hintAction(
@@ -1272,20 +1243,16 @@ class MediaBrowser extends Component implements HasActions, HasForms
             }
         }
 
-        // 1. Move to the correct folder
         $this->setCurrentFolder($parentId);
 
-        // 2. Clear "Show Selected Only" to see the context
         $this->showSelectedOnly = false;
 
-        // 3. Calculate page
         $perPage = (int) $this->perPage;
         if ($perPage > 0) {
             $folders = $this->getFoldersProperty();
             $files = $this->getMediaFilesProperty();
             $allItems = $folders->concat($files);
 
-            // Re-apply sorting to match getItemsProperty
             $sortProperty = $this->sortField ?: 'name';
             if ($sortProperty === 'mime_type') {
                 $allItems = $allItems->map(function ($item) {
@@ -1396,7 +1363,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
     public function clearSelectionAction(): Action
     {
         return Action::make('clearSelection')
-            ->label('Clear')
+            ->label('مسح التحديد')
             ->icon(Heroicon::XMark)
             ->color('danger')
             ->outlined()
@@ -1406,27 +1373,27 @@ class MediaBrowser extends Component implements HasActions, HasForms
     public function bulkDeleteAction(): Action
     {
         return Action::make('bulkDelete')
-            ->label('Delete')
+            ->label('حذف')
             ->icon(Heroicon::Trash)
             ->color('danger')
             ->requiresConfirmation()
-            ->modalHeading('Delete selected items?')
-            ->modalDescription('Are you sure you want to delete the selected items? This action cannot be undone.')
-            ->modalSubmitActionLabel('Yes, delete them')
+            ->modalHeading('حذف العناصر المحددة؟')
+            ->modalDescription('هل أنت متأكد من حذف العناصر المحددة؟ لا يمكن التراجع عن هذا الإجراء.')
+            ->modalSubmitActionLabel('نعم، احذفها')
             ->action(fn () => $this->deleteSelectedItems());
     }
 
     public function bulkMoveAction(): Action
     {
         return Action::make('bulkMove')
-            ->label('Move')
+            ->label('نقل')
             ->icon(Heroicon::ArrowsRightLeft)
             ->schema([
                 SelectTree::make('folder_id')
-                    ->label('Target Folder')
+                    ->label('المجلد الهدف')
                     ->query(Folder::query()->orderBy('name'), 'name', 'parent_id')
                     ->prepend([
-                        'name' => 'Root',
+                        'name' => 'الجذر',
                         'value' => 0,
                     ])
                     ->enableBranchNode()
@@ -1453,11 +1420,11 @@ class MediaBrowser extends Component implements HasActions, HasForms
     public function createFolderAction(): Action
     {
         return Action::make('createFolder')
-            ->label('Create Folder')
+            ->label('إنشاء مجلد')
             ->icon(Heroicon::OutlinedFolderPlus)
             ->schema([
                 TextInput::make('name')
-                    ->label('Folder Name')
+                    ->label('اسم المجلد')
                     ->required(),
             ])
             ->action(function (array $data) {
@@ -1474,7 +1441,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
     public function goUpAction(): Action
     {
         return Action::make('goUp')
-            ->label('Up')
+            ->label('للأعلى')
             ->icon('heroicon-m-arrow-left')
             ->iconButton()
             ->color('gray')
@@ -1491,19 +1458,22 @@ class MediaBrowser extends Component implements HasActions, HasForms
     public function uploadAction(): Action
     {
         return Action::make('upload')
-            ->label('Upload')
+            ->label('رفع')
             ->icon('heroicon-m-arrow-up-tray')
             ->schema([
                 FileUpload::make('files')
-                    ->label('Files')
+                    ->label('الملفات')
                     ->multiple()
                     ->preserveFilenames()
                     ->disk(fn () => filament('media-manager')->getDisk())
                     ->required(),
                 TagsInput::make('tags')
+                    ->label('الوسوم')
                     ->suggestions(Tag::pluck('name')->toArray()),
-                TextInput::make('caption'),
-                TextInput::make('alt_text'),
+                TextInput::make('caption')
+                    ->label('التعليق'),
+                TextInput::make('alt_text')
+                    ->label('النص البديل'),
             ])
             ->action(function (array $data) {
                 foreach ($data['files'] as $file) {
@@ -1537,11 +1507,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                 ->usingFileName($filename)
                                 ->toMediaCollection('default', $diskName);
                         } else {
-                            // $file is a path representing a temporarily uploaded file string from Livewire FileUpload
                             $disk = Storage::disk($diskName);
 
-                            // Try to find the actual path by checking existence
-                            // Some S3 providers return 403 for HeadObject if file doesn't exist or permissions are tight
                             $pathsToTry = [
                                 $file,
                                 'livewire-tmp/'.$file,
@@ -1555,7 +1522,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                         break;
                                     }
                                 } catch (\Throwable $e) {
-                                    // If exists() fails, we'll try the next candidate or let addMediaFromDisk fail
                                     continue;
                                 }
                             }
@@ -1565,15 +1531,12 @@ class MediaBrowser extends Component implements HasActions, HasForms
                                     ->usingFileName($filename)
                                     ->toMediaCollection('default', $diskName);
                             } catch (\Throwable $e) {
-                                // Fallback: If addMediaFromDisk fails, try getting the content directly
-                                // (sometimes GetObject works when HeadObject/exists fails)
                                 try {
                                     $content = $disk->get($actualPath);
                                     $media = $fileModel->addMediaFromString($content)
                                         ->usingFileName($filename)
                                         ->toMediaCollection('default', $diskName);
                                 } catch (\Throwable $finalError) {
-                                    // Re-throw the original error if fallback also fails
                                     throw $e;
                                 }
                             }
@@ -1587,11 +1550,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
                             'height' => $media->getCustomProperty('height'),
                         ]);
                     } catch (\Throwable $e) {
-                        // Log error or handle gracefully
-                        Log::error('Media Manager Upload Error: '.$e->getMessage());
+                        Log::error('خطأ في رفع الوسائط: '.$e->getMessage());
 
-                        // We still have the record but media was not attached.
-                        // We might want to delete the record if media fails
                         $fileModel->delete();
 
                         $this->dispatch('media-upload-error', message: $e->getMessage());
@@ -1614,14 +1574,13 @@ class MediaBrowser extends Component implements HasActions, HasForms
             ->map(fn ($id) => str_replace('file-', '', $id))
             ->toArray();
 
-        // If no items are selected in multiple, check if a single file is being viewed
         if (empty($fileIds) && $this->selectedFileId) {
             $fileIds = [$this->selectedFileId];
         }
 
         if (empty($fileIds)) {
             Notification::make()
-                ->title('Please select at least one file')
+                ->title('يرجى تحديد ملف واحد على الأقل')
                 ->warning()
                 ->send();
 
@@ -1650,7 +1609,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
             if ($type === 'folder') {
                 $folder = Folder::find($id);
                 if ($folder) {
-                    // Recursive deletion of children and files
                     $this->recursiveDeleteFolder($folder);
                 }
             } else {
@@ -1667,30 +1625,26 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $this->dispatch('media-updated');
 
         Notification::make()
-            ->title('Items deleted successfully')
+            ->title('تم حذف العناصر بنجاح')
             ->success()
             ->send();
     }
 
     protected function recursiveDeleteFolder(Folder $folder): void
     {
-        // Delete all files in this folder
         foreach ($folder->files as $file) {
             $file->delete();
         }
 
-        // Recursively delete sub-folders
         foreach ($folder->children as $subFolder) {
             $this->recursiveDeleteFolder($subFolder);
         }
 
-        // Finally delete the folder itself
         $folder->delete();
     }
 
     public function moveSelectedItems(?int $targetFolderId): void
     {
-        // Treat 0 as null (Root)
         $targetFolderId = ($targetFolderId === 0 || $targetFolderId === null) ? null : $targetFolderId;
 
         foreach ($this->selectedItems as $itemKey) {
@@ -1702,7 +1656,6 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
             if ($type === 'folder') {
                 $folder = Folder::find($id);
-                // Prevent moving a folder into itself or its descendants
                 if ($folder && $targetFolderId != $folder->id) {
                     $descendantIds = $folder->getAllDescendantIds();
                     if (! in_array($targetFolderId, $descendantIds)) {
@@ -1723,7 +1676,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
         $this->dispatch('media-updated');
 
         Notification::make()
-            ->title('Items moved successfully')
+            ->title('تم نقل العناصر بنجاح')
             ->success()
             ->send();
     }
