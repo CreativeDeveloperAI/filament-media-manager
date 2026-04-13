@@ -152,6 +152,8 @@ class MediaBrowser extends Component implements HasActions, HasForms
 
     public ?Collection $files = null;
 
+    protected static ?string $title = 'مركز الوسائط';
+
     public ?array $acceptedFileTypes = [];
 
     public function updatedSortField(): void
