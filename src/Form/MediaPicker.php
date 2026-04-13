@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Slimani\MediaManager\Livewire\MediaBrowser;
 use Slimani\MediaManager\Models\File;
@@ -169,32 +170,43 @@ class MediaPicker extends FileUpload
         );
 
         $this->getUploadedFileUsing(static function (MediaPicker $component, string $file): ?array {
-            if (str_contains($file, 'media-library')) {
-                // This is a spatie media UUID or ID
-                $media = Media::query()->where('uuid', $file)->orWhere('id', $file)->first();
+            // Check if $file is a UUID (common for Spatie Media)
+            if (Str::isUuid($file)) {
+                $media = Media::where('uuid', $file)->first();
                 if ($media) {
+                    $url = null;
+                    try {
+                        $url = $media->getTemporaryUrl(now()->addMinutes(20), $component->getConversion());
+                    } catch (\Throwable $e) {
+                        $url = $media->getUrl($component->getConversion());
+                    }
+
                     return [
                         'name' => $media->name,
                         'size' => $media->size,
                         'type' => $media->mime_type,
-                        'url' => $media->getUrl($component->getConversion()),
+                        'url' => $url,
                     ];
                 }
             }
 
-            $fileRecord = File::find($file);
-            if (! $fileRecord) {
-                return null;
+            // Fallback: Check if it's a numeric ID for our package's File model
+            if (is_numeric($file)) {
+                $fileRecord = File::find($file);
+                if ($fileRecord) {
+                    $media = $fileRecord->getFirstMedia('default');
+                    if ($media) {
+                        return [
+                            'name' => $media->name ?? $fileRecord->name,
+                            'size' => $media->size ?? $fileRecord->size ?? 0,
+                            'type' => $media->mime_type ?? $fileRecord->mime_type,
+                            'url' => $fileRecord->getUrl($component->getConversion()),
+                        ];
+                    }
+                }
             }
 
-            $media = $fileRecord->getFirstMedia('default');
-
-            return [
-                'name' => $media?->name ?? $media?->file_name ?? $fileRecord->name,
-                'size' => $media?->size ?? $fileRecord->size ?? 0,
-                'type' => $media?->mime_type ?? $fileRecord->mime_type,
-                'url' => $fileRecord->getUrl($component->getConversion()),
-            ];
+            return null;
         });
 
         $this->saveUploadedFileUsing(static function (MediaPicker $component, TemporaryUploadedFile $file): ?string {
@@ -326,14 +338,19 @@ class MediaPicker extends FileUpload
                 // Add new media
                 $toAdd = array_diff($identifiers, $currentMediaUuids);
                 foreach ($toAdd as $id) {
-                    $file = File::find($id);
-                    if ($file) {
-                        $media = $file->getFirstMedia('default');
-                        if ($media) {
-                            $record->addMedia($media->getPath())
-                                ->usingFileName($media->file_name)
-                                ->usingName($media->name)
-                                ->toMediaCollection($collection);
+                    // $id could be a File model ID or a Media model UUID (if already linked)
+                    // If it's a UUID and already in $currentMediaUuids, it won't be in $toAdd.
+                    // If it's a File model ID (newly selected from browser), we need to copy it.
+                    if (is_numeric($id)) {
+                        $file = File::find($id);
+                        if ($file) {
+                            $media = $file->getFirstMedia('default');
+                            if ($media) {
+                                $record->addMedia($media->getPath())
+                                    ->usingFileName($media->file_name)
+                                    ->usingName($media->name)
+                                    ->toMediaCollection($collection);
+                            }
                         }
                     }
                 }
