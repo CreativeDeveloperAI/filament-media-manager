@@ -202,20 +202,6 @@ class MediaPicker extends FileUpload
             ];
         });
 
-        $this->getPreviewUrlUsing(static function (MediaPicker $component, $file): ?string {
-            if (blank($file)) return null;
-
-            $media = null;
-            if (Str::isUuid($file)) {
-                $media = Media::where('uuid', $file)->first();
-            } elseif (is_numeric($file)) {
-                $fileRecord = File::find($file);
-                $media = $fileRecord?->getFirstMedia('default');
-            }
-
-            return $media?->getUrl($component->getConversion());
-        });
-
         $this->afterStateHydrated(static function (MediaPicker $component, $state): void {
             $record = $component->getRecord();
             $collection = $component->getCollection();
