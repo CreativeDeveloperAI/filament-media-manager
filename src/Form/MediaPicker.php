@@ -164,13 +164,26 @@ class MediaPicker extends FileUpload
                 ->slideOver()
                 ->modalWidth('6xl')
                 ->action(function (MediaPicker $component, array $data) {
-                    $identifiers = array_filter(explode(',', $data['selected_ids'] ?? ''));
-                    $component->state($identifiers);
+                    $selectedFileIds = array_filter(explode(',', $data['selected_ids'] ?? ''));
+                    $record = $component->getRecord();
+                    $collection = $component->getCollection();
+
+                    if ($record instanceof HasMedia && $collection) {
+                        $spatieMediaUuidsFromFiles = [];
+                        foreach ($selectedFileIds as $fileId) {
+                            $file = File::find($fileId);
+                            if ($file && $file->getFirstMedia('default')) {
+                                $spatieMediaUuidsFromFiles[] = $file->getFirstMedia('default')->uuid;
+                            }
+                        }
+                        $component->state($component->isMultiple() ? $spatieMediaUuidsFromFiles : (Arr::first($spatieMediaUuidsFromFiles) ?? null));
+                    } else {
+                        $component->state($selectedFileIds);
+                    }
                 })
         );
 
         $this->getUploadedFileUsing(static function (MediaPicker $component, string $file): ?array {
-            // Check if $file is a UUID (common for Spatie Media)
             if (Str::isUuid($file)) {
                 $media = Media::where('uuid', $file)->first();
                 if ($media) {
@@ -190,7 +203,6 @@ class MediaPicker extends FileUpload
                 }
             }
 
-            // Fallback: Check if it's a numeric ID for our package's File model
             if (is_numeric($file)) {
                 $fileRecord = File::find($file);
                 if ($fileRecord) {
@@ -338,22 +350,21 @@ class MediaPicker extends FileUpload
                 // Add new media
                 $toAdd = array_diff($identifiers, $currentMediaUuids);
                 foreach ($toAdd as $id) {
-                    // $id could be a File model ID or a Media model UUID (if already linked)
-                    // If it's a UUID and already in $currentMediaUuids, it won't be in $toAdd.
-                    // If it's a File model ID (newly selected from browser), we need to copy it.
-                    if (is_numeric($id)) {
-                        $file = File::find($id);
-                        if ($file) {
-                            $media = $file->getFirstMedia('default');
-                            if ($media) {
-                                $record->addMedia($media->getPath())
-                                    ->usingFileName($media->file_name)
-                                    ->usingName($media->name)
-                                    ->toMediaCollection($collection);
-                            }
-                        }
+                    $media = Media::where('uuid', $id)->first();
+                    if ($media) {
+                        $record->addMedia($media->getPath())
+                            ->usingFileName($media->file_name)
+                            ->usingName($media->name)
+                            ->toMediaCollection($collection);
                     }
                 }
+
+                // IMPORTANT: Refresh the state to avoid 'loading' state after save
+                $record->refresh();
+                $component->state($component->isMultiple()
+                    ? $record->getMedia($collection)->pluck('uuid')->toArray()
+                    : $record->getMedia($collection)->first()?->uuid
+                );
 
                 return;
             }
