@@ -51,6 +51,11 @@ class MediaManager extends Page implements HasActions, HasForms
 
     protected string $view = 'media-manager::filament.pages.media-manager';
 
+    public function getTitle(): string
+    {
+        return 'مدير الوسائط';
+    }
+
     public function getHeading(): string
     {
         return 'مدير الوسائط';
