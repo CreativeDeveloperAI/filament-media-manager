@@ -111,22 +111,13 @@ class MediaManager extends Page implements HasActions, HasForms
         $hasUpdate = $versionInfo['hasUpdate'];
 
         return [
-            Action::make('version')
-                ->label($hasUpdate ? "Update available: {$versionInfo['latestVersion']}" : $version)
-                ->icon($hasUpdate ? 'heroicon-m-arrow-path' : null)
-                ->url('https://github.com/slimani-dev/filament-media-manager/releases', true)
-                ->link()
-                ->size(Size::ExtraSmall)
-                ->color($hasUpdate ? Color::Red : Color::Gray)
-                ->tooltip($hasUpdate ? "Current version {$version}" : 'up to date ✅'),
-
             ActionGroup::make([
                 Action::make('regenerate_conversions')
-                    ->label(__('Regenerate Conversions'))
+                    ->label('إعادة توليد التحويلات')
                     ->icon('heroicon-m-arrow-path')
                     ->schema([
                         Select::make('conversions')
-                            ->label(__('Specific Conversions'))
+                            ->label('تحويلات محددة')
                             ->multiple()
                             ->options(function () {
                                 $file = new File;
@@ -134,18 +125,22 @@ class MediaManager extends Page implements HasActions, HasForms
 
                                 return collect($file->mediaConversions)->mapWithKeys(fn ($c) => [$c->getName() => $c->getName()])->toArray();
                             })
-                            ->helperText(__('Select specific conversions to regenerate. Leave empty for all.')),
+                            ->helperText('حدد التحويلات المراد إعادة توليدها. اتركه فارغاً للكل.'),
                         Checkbox::make('only_missing')
-                            ->label(__('Only Missing'))
+                            ->label('المفقودة فقط')
                             ->default(true),
                         Checkbox::make('with_responsive_images')
-                            ->label(__('With Responsive Images')),
+                            ->label('مع الصور المتجاوبة'),
                         Checkbox::make('force')
-                            ->label(__('Force Regeneration')),
+                            ->label('إعادة التوليد القسري'),
                     ])
-                    ->modalHeading(fn () => count($this->selectedFileIds) > 0 ? __('Regenerate Conversions for :count items', ['count' => count($this->selectedFileIds)]) : __('Regenerate Conversions for all items'))
-                    ->modalDescription(fn () => count($this->selectedFileIds) > 0 ? null : __('This will regenerate conversions for all media items in the library. This may take some time.'))
-                    ->successNotificationTitle(__('Media regeneration started successfully.'))
+                    ->modalHeading(fn () => count($this->selectedFileIds) > 0
+                        ? 'إعادة توليد التحويلات لـ '.count($this->selectedFileIds).' عناصر'
+                        : 'إعادة توليد التحويلات لجميع العناصر')
+                    ->modalDescription(fn () => count($this->selectedFileIds) > 0
+                        ? null
+                        : 'سيؤدي هذا إلى إعادة توليد التحويلات لجميع عناصر الوسائط في المكتبة. قد يستغرق هذا بعض الوقت.')
+                    ->successNotificationTitle('بدأت إعادة توليد الوسائط بنجاح.')
                     ->action(function (array $data) {
                         $params = [
                             'modelType' => File::class,
@@ -176,7 +171,7 @@ class MediaManager extends Page implements HasActions, HasForms
                         } catch (\Exception $e) {
                             Notification::make()
                                 ->danger()
-                                ->title(__('Error regenerating media: ').$e->getMessage())
+                                ->title('خطأ في إعادة توليد الوسائط: '.$e->getMessage())
                                 ->send();
 
                             return;
@@ -210,7 +205,7 @@ class MediaManager extends Page implements HasActions, HasForms
                     return $response->json('tag_name');
                 }
             } catch (\Exception $e) {
-                // Ignore network errors
+                // تجاهل أخطاء الشبكة
             }
 
             return null;
