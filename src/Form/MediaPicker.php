@@ -18,6 +18,8 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Slimani\MediaManager\Livewire\MediaBrowser;
 use Slimani\MediaManager\Models\File;
 use Slimani\MediaManager\Models\Folder;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaPicker extends FileUpload
 {
@@ -62,9 +64,9 @@ class MediaPicker extends FileUpload
         return $this;
     }
 
-    public function getCollection(): ?string
+    public function getCollection(): string
     {
-        return $this->evaluate($this->collection);
+        return $this->evaluate($this->collection) ?? 'default';
     }
 
     public function directory(string|\Closure|null $directory): static
@@ -115,13 +117,10 @@ class MediaPicker extends FileUpload
     {
         parent::setUp();
 
-        // Standard FileUpload is used as a base for UI, but we disable its file handling
-        // Standard FileUpload is used as a base for UI
         $this->saveRelationshipsUsing(null);
         $this->fetchFileInformation(false);
 
-        // Generate a stable picker ID for this component instance
-        $this->pickerId = str(static::class)->afterLast('\\')->append('-')->append($this->getName())->toString();
+        $this->pickerId = str(static::class)->afterLast('\\')->after('-')->append('-')->append($this->getName())->toString();
 
         $this->hintAction(
             Action::make('browse_media')
@@ -132,7 +131,6 @@ class MediaPicker extends FileUpload
                     $pickerId = $component->getPickerId();
                     $actionIndex = $action->getNestingIndex() ?? array_key_last($action->getLivewire()->mountedActions);
                     $statePath = "mountedActions.{$actionIndex}.data.selected_ids";
-                    $folderStatePath = "mountedActions.{$actionIndex}.data.current_folder_id";
 
                     $actionData = $action->getLivewire()->mountedActions[$actionIndex]['data'] ?? [];
                     $selectedIds = $actionData['selected_ids'] ?? null;
@@ -160,41 +158,42 @@ class MediaPicker extends FileUpload
                             ->extraAttributes(fn ($component) => [
                                 'x-on:sync-picker-ids.window' => "\$event.detail.statePath === '{$statePath}' ? \$wire.set('{$component->getStatePath()}', \$event.detail.ids, false) : null",
                             ]),
-
-                        Hidden::make('current_folder_id')
-                            ->extraAttributes(fn ($component) => [
-                                'x-on:media-folder-changed.window' => "\$event.detail.statePath === '{$statePath}' ? \$wire.set('{$component->getStatePath()}', \$event.detail.folderId, false) : null",
-                            ]),
                     ];
                 })
                 ->slideOver()
                 ->modalWidth('6xl')
                 ->action(function (MediaPicker $component, array $data) {
                     $identifiers = array_filter(explode(',', $data['selected_ids'] ?? ''));
-                    $files = File::whereIn('id', $identifiers)->get();
-
                     $component->state($identifiers);
                 })
         );
 
-        // No-op hydration since we handle IDs directly
-
         $this->getUploadedFileUsing(static function (MediaPicker $component, string $file): ?array {
-            $fileRecord = File::find($file);
+            if (str_contains($file, 'media-library')) {
+                // This is a spatie media UUID or ID
+                $media = Media::query()->where('uuid', $file)->orWhere('id', $file)->first();
+                if ($media) {
+                    return [
+                        'name' => $media->name,
+                        'size' => $media->size,
+                        'type' => $media->mime_type,
+                        'url' => $media->getUrl($component->getConversion()),
+                    ];
+                }
+            }
 
+            $fileRecord = File::find($file);
             if (! $fileRecord) {
                 return null;
             }
 
             $media = $fileRecord->getFirstMedia('default');
 
-            $url = $fileRecord->getUrl($component->getConversion());
-
             return [
                 'name' => $media?->name ?? $media?->file_name ?? $fileRecord->name,
                 'size' => $media?->size ?? $fileRecord->size ?? 0,
                 'type' => $media?->mime_type ?? $fileRecord->mime_type,
-                'url' => $url,
+                'url' => $fileRecord->getUrl($component->getConversion()),
             ];
         });
 
@@ -237,21 +236,35 @@ class MediaPicker extends FileUpload
             return (string) $fileModel->id;
         });
 
-        // Map IDs/Relationships from model to Identifiers for the picker
         $this->afterStateHydrated(static function (MediaPicker $component, $state): void {
+            $record = $component->getRecord();
+            $collection = $component->getCollection();
 
-            if (blank($state)) {
-                $record = $component->getRecord();
-                if ($record) {
-                    $relationship = $component->getRelationship();
-                    if ($relationship) {
-                        if ($relationship instanceof BelongsTo) {
-                            $state = $record->getAttribute($relationship->getForeignKeyName());
-                        } elseif ($relationship instanceof BelongsToMany or $relationship instanceof MorphToMany) {
-                            $state = $relationship->get();
-                        }
-                    } else {
+            if ($record instanceof HasMedia && $collection) {
+                $media = $record->getMedia($collection);
+                if ($media->isNotEmpty()) {
+                    $component->state($component->isMultiple()
+                        ? $media->pluck('uuid')->toArray()
+                        : $media->first()->uuid
+                    );
+
+                    return;
+                }
+            }
+
+            if (blank($state) && $record) {
+                $relationship = $component->getRelationship();
+                if ($relationship) {
+                    if ($relationship instanceof BelongsTo) {
+                        $state = $record->getAttribute($relationship->getForeignKeyName());
+                    } elseif ($relationship instanceof BelongsToMany or $relationship instanceof MorphToMany) {
+                        $state = $relationship->get();
+                    }
+                } else {
+                    try {
                         $state = $record->getAttribute($component->getName());
+                    } catch (\Exception $e) {
+                        // Column might not exist
                     }
                 }
             }
@@ -279,8 +292,12 @@ class MediaPicker extends FileUpload
             }
         });
 
-        // Map identifiers back to the database relationships
         $this->dehydrateStateUsing(static function (MediaPicker $component, $state) {
+            $record = $component->getRecord();
+            if ($record instanceof HasMedia) {
+                return $state; // Keep as is, will be handled in saveRelationships
+            }
+
             $identifiers = $component->getIdentifiersFromState($state);
 
             if ($component->isMultiple()) {
@@ -290,13 +307,42 @@ class MediaPicker extends FileUpload
             return $identifiers[0] ?? null;
         });
 
-        // Manually handle relationship saving
         $this->saveRelationshipsUsing(static function (MediaPicker $component, $state): void {
-            $relationship = $component->getRelationship();
-            $identifiers = $component->getIdentifiersFromState($state);
+            $record = $component->getRecord();
+            if (! $record) {
+                return;
+            }
 
+            $identifiers = $component->getIdentifiersFromState($state);
+            $collection = $component->getCollection();
+
+            if ($record instanceof HasMedia && $collection) {
+                $currentMediaUuids = $record->getMedia($collection)->pluck('uuid')->toArray();
+
+                // Delete media that is no longer selected
+                $toDelete = array_diff($currentMediaUuids, $identifiers);
+                Media::whereIn('uuid', $toDelete)->delete();
+
+                // Add new media
+                $toAdd = array_diff($identifiers, $currentMediaUuids);
+                foreach ($toAdd as $id) {
+                    $file = File::find($id);
+                    if ($file) {
+                        $media = $file->getFirstMedia('default');
+                        if ($media) {
+                            $record->addMedia($media->getPath())
+                                ->usingFileName($media->file_name)
+                                ->usingName($media->name)
+                                ->toMediaCollection($collection);
+                        }
+                    }
+                }
+
+                return;
+            }
+
+            $relationship = $component->getRelationship();
             if ($relationship instanceof BelongsTo) {
-                $record = $component->getRecord();
                 $column = $relationship->getForeignKeyName();
                 $id = $identifiers[0] ?? null;
 
@@ -308,14 +354,12 @@ class MediaPicker extends FileUpload
                 return;
             }
 
-            if ($relationship instanceof BelongsToMany ||
-                $relationship instanceof MorphToMany) {
-
+            if ($relationship instanceof BelongsToMany || $relationship instanceof MorphToMany) {
                 $pivotData = [];
-                $collection = $component->getCollection() ?: $component->getName();
+                $relCollection = $component->getCollection() ?: $component->getName();
 
                 foreach ($identifiers as $id) {
-                    $pivotData[$id] = ['collection' => $collection];
+                    $pivotData[$id] = ['collection' => $relCollection];
                 }
 
                 $relationship->sync($pivotData);
@@ -323,12 +367,12 @@ class MediaPicker extends FileUpload
                 return;
             }
 
-            // Fallback for direct attributes (not relationships)
             if (! $relationship && ! $component->isMultiple()) {
-                $record = $component->getRecord();
-                if ($record) {
+                try {
                     $record->{$component->getName()} = $identifiers[0] ?? null;
                     $record->save();
+                } catch (\Exception $e) {
+                    // Column doesn't exist, ignore if we are using spatie collection
                 }
             }
         });
@@ -336,6 +380,6 @@ class MediaPicker extends FileUpload
 
     public function getValidationRules(): array
     {
-        return []; // Bypass strict FileUpload validation
+        return [];
     }
 }
