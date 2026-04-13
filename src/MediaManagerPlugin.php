@@ -17,9 +17,9 @@ class MediaManagerPlugin implements Plugin
 
     protected string|Closure|null $disk = null;
 
-    protected string|Closure $navigationGroup = 'Content';
+    protected string|Closure $navigationGroup = 'المحتوى';
 
-    protected string|Closure $navigationLabel = 'Media Manager';
+    protected string|Closure $navigationLabel = 'مدير الوسائط';
 
     protected string|Closure|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
