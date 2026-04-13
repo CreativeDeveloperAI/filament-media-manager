@@ -129,7 +129,7 @@
             <div
                 class="mt-1 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 font-medium">
                 @if($isFolder)
-                    <span>{{ $item->children_count + $item->files_count }} items</span>
+                    <span>{{ $item->children_count + $item->files_count }} عنصر</span>
                 @else
                     <span>{{ Number::fileSize($item->size ?? 0) }}</span>
                     <span class="uppercase tracking-wider opacity-60">{{ $item->extension }}</span>

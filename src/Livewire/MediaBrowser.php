@@ -1132,6 +1132,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ->visible(fn () => $this->isEditingTags)
                 ->hintAction(
                     Action::make('saveTags')
+                        ->label('حفظ الوسوم')
                         ->icon('heroicon-m-check')
                         ->color('success')
                         ->action(fn () => $this->saveTags())
@@ -1144,6 +1145,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ->badge()
                 ->hintAction(
                     Action::make('editTags')
+                        ->label('تعديل الوسوم')
                         ->icon('heroicon-m-pencil-square')
                         ->action(function () use ($file) {
                             $this->selectedFileId = $file->id;
@@ -1198,6 +1200,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ->visible(fn () => $this->isEditingTags)
                 ->hintAction(
                     Action::make('saveFolderTags')
+                        ->label('حفظ الوسوم')
                         ->icon('heroicon-m-check')
                         ->color('success')
                         ->action(fn () => $this->saveTags())
@@ -1210,6 +1213,7 @@ class MediaBrowser extends Component implements HasActions, HasForms
                 ->badge()
                 ->hintAction(
                     Action::make('editFolderTags')
+                        ->label('تعديل الوسوم')
                         ->icon('heroicon-m-pencil-square')
                         ->action(function () use ($folder) {
                             $this->editingFolderId = $folder->id;
@@ -1376,6 +1380,19 @@ class MediaBrowser extends Component implements HasActions, HasForms
     {
         return Action::make('bulkDelete')
             ->label('حذف')
+            ->icon(Heroicon::Trash)
+            ->color('danger')
+            ->requiresConfirmation()
+            ->modalHeading('حذف العناصر المحددة؟')
+            ->modalDescription('هل أنت متأكد من حذف العناصر المحددة؟ لا يمكن التراجع عن هذا الإجراء.')
+            ->modalSubmitActionLabel('نعم، احذفها')
+            ->action(fn () => $this->deleteSelectedItems());
+    }
+
+    public function bulkDeleteSelectedAction(): Action
+    {
+        return Action::make('bulkDeleteSelected')
+            ->label('حذف المحددة')
             ->icon(Heroicon::Trash)
             ->color('danger')
             ->requiresConfirmation()
